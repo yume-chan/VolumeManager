@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Volume Manager</string>
+    <string name="accessibility_service_description">Keep volume manager running in background, and provide quick access to it via accessibility button or physical volume button.</string>
 </resources>
