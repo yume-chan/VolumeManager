@@ -23,6 +23,16 @@ jobs:
       - name: Build
         run: ./gradlew assembleRelease
 
+      - name: Sign APK
+        run: |
+          echo "${{ secrets.KEYSTORE_FILE }}" | base64 -d > keystore.jks
+          apksigner sign \
+            --ks keystore.jks \
+            --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
+            --ks-key-alias ${{ secrets.KEY_ALIAS }} \
+            --key-pass pass:${{ secrets.KEY_PASSWORD }} \
+            app/build/outputs/apk/release/app-release-unsigned.apk
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
