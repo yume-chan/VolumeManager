@@ -26,7 +26,8 @@ jobs:
       - name: Sign APK
         run: |
           echo "${{ secrets.KEYSTORE_FILE }}" | base64 -d > keystore.jks
-          apksigner sign \
+          $ANDROID_HOME/build-tools/34.0.0/zipalign -c -v 4 app/build/outputs/apk/release/app-release-unsigned.apk
+          $ANDROID_HOME/build-tools/34.0.0/apksigner sign \
             --ks keystore.jks \
             --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
             --ks-key-alias ${{ secrets.KEY_ALIAS }} \
