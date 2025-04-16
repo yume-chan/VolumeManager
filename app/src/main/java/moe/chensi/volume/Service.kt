@@ -36,6 +36,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -57,6 +58,7 @@ import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import org.joor.Reflect
 import rikka.shizuku.ShizukuProvider
+import java.util.Objects
 
 class Service : AccessibilityService() {
     companion object {
@@ -66,8 +68,20 @@ class Service : AccessibilityService() {
         private const val IDLE_TIMEOUT = 5000L
     }
 
-    private val windowManager by lazy { getSystemService(WindowManager::class.java) }
-    private val audioManager: AudioManager by lazy { getSystemService(AudioManager::class.java) }
+    private val windowManager: WindowManager by lazy {
+        Objects.requireNonNull(
+            getSystemService(
+                WindowManager::class.java
+            )!!
+        )
+    }
+    private val audioManager: AudioManager by lazy {
+        Objects.requireNonNull(
+            getSystemService(
+                AudioManager::class.java
+            )!!
+        )
+    }
     private lateinit var manager: Manager
 
     private var idleTimer: CountDownTimer? = null
@@ -83,6 +97,8 @@ class Service : AccessibilityService() {
         }.start()
     }
 
+    private var lifecycle: LifecycleRegistry? = null
+
     private fun createView(): View {
         return object : AbstractComposeView(this) {
             init {
@@ -95,6 +111,7 @@ class Service : AccessibilityService() {
                     init {
                         savedStateRegistryController.performRestore(null)
                         lifecycleRegistry.currentState = Lifecycle.State.STARTED
+                        this@Service.lifecycle = lifecycleRegistry
                     }
 
                     override val lifecycle: Lifecycle
@@ -140,15 +157,19 @@ class Service : AccessibilityService() {
             override fun Content() {
                 var volumeChanged by remember { mutableIntStateOf(0) }
 
-                LaunchedEffect(audioManager) {
-                    registerReceiver(
-                        object : BroadcastReceiver() {
-                            override fun onReceive(context: Context?, intent: Intent?) {
-                                volumeChanged++
-                                startIdleTimer()
-                            }
-                        }, IntentFilter("android.media.VOLUME_CHANGED_ACTION")
-                    )
+                DisposableEffect(audioManager) {
+                    val receiver = object : BroadcastReceiver() {
+                        override fun onReceive(context: Context?, intent: Intent?) {
+                            volumeChanged++
+                            startIdleTimer()
+                        }
+                    }
+
+                    registerReceiver(receiver, IntentFilter("android.media.VOLUME_CHANGED_ACTION"))
+
+                    onDispose {
+                        unregisterReceiver(receiver)
+                    }
                 }
 
                 return MaterialTheme {
@@ -165,8 +186,7 @@ class Service : AccessibilityService() {
                         ) {
                             AppVolumeList(manager.apps.values, onChange = { startIdleTimer() }) {
                                 item(AudioManager.STREAM_MUSIC) {
-                                    StreamVolumeSlider(
-                                        AudioManager.STREAM_MUSIC,
+                                    StreamVolumeSlider(AudioManager.STREAM_MUSIC,
                                         volumeChanged,
                                         MaterialMusicNote,
                                         "Music",
@@ -174,8 +194,7 @@ class Service : AccessibilityService() {
                                 }
 
                                 item(AudioManager.STREAM_NOTIFICATION) {
-                                    StreamVolumeSlider(
-                                        AudioManager.STREAM_NOTIFICATION,
+                                    StreamVolumeSlider(AudioManager.STREAM_NOTIFICATION,
                                         volumeChanged,
                                         MaterialNotifications,
                                         "Notifications",
@@ -227,6 +246,7 @@ class Service : AccessibilityService() {
             animateAlpha(layoutParams.alpha, 0f, ANIMATION_DURATION) {
                 if (!viewVisible) {
                     Log.i(TAG, "remove view")
+                    lifecycle?.currentState = Lifecycle.State.DESTROYED
                     windowManager.removeView(view)
                     view = null
                 }

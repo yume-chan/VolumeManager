@@ -25,6 +25,7 @@ import org.joor.Reflect
 import rikka.shizuku.ShizukuBinderWrapper
 import rikka.shizuku.SystemServiceHelper
 import java.lang.reflect.Method
+import java.util.Objects
 
 @SuppressLint("PrivateApi")
 class Manager(context: Context, private val dataStore: DataStore<Preferences>) {
@@ -77,7 +78,8 @@ class Manager(context: Context, private val dataStore: DataStore<Preferences>) {
                 }
 
                 if (initializing) {
-                    val audioManager = context.getSystemService(AudioManager::class.java)
+                    val audioManager =
+                        Objects.requireNonNull(context.getSystemService(AudioManager::class.java)!!)
                     Reflect.on(audioManager).set(
                         "sService",
                         getShizukuService(Context.AUDIO_SERVICE, "android.media.IAudioService")

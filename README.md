@@ -16,13 +16,13 @@ Control each app's volume independently. [Shizuku](https://shizuku.rikka.app/) i
    2. Press any volume button and a popup should appear, completely replace the default volume popup
    3. Enable accessibility button and click the button
 
-## Compare with [SoundMaster from ShizuTools](https://github.com/legendsayantan/ShizuTools/wiki/SoundMaster)
+## Compare to [SoundMaster from ShizuTools](https://github.com/legendsayantan/ShizuTools/wiki/SoundMaster)
 
 This app uses hidden API to directly change each audio stream's volume.
 
 SoundMaster uses MediaProjection API to record audio from each app and apply post-effects.
 
-|                                | Volume Master  | SoundMaster    |
+| Feature                        | Volume Manager | SoundMaster    |
 | ------------------------------ | -------------- | -------------- |
 | Control volume of each app     | ✅              | ✅              |
 | Set output device for each app | ❌ <sup>1</sup> | ✅              |
