@@ -130,7 +130,7 @@ class Service : AccessibilityService() {
 
                 Log.i(TAG, "onAttachedToWindow")
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && windowManager.isCrossWindowBlurEnabled && isHardwareAccelerated) {
                     background =
                         Reflect.on(rootSurfaceControl).call("createBackgroundBlurDrawable").apply {
                             call("setBlurRadius", 200)
@@ -246,6 +246,7 @@ class Service : AccessibilityService() {
             animateAlpha(layoutParams.alpha, 0f, ANIMATION_DURATION) {
                 if (!viewVisible) {
                     Log.i(TAG, "remove view")
+                    view!!.background = null
                     lifecycle?.currentState = Lifecycle.State.DESTROYED
                     windowManager.removeView(view)
                     view = null
