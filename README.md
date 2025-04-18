@@ -6,6 +6,12 @@ Control each app's volume independently. [Shizuku](https://shizuku.rikka.app/) i
 
 ![Screenshot](screenshot.png)
 
+## Download
+
+Latest development version can be downloaded from [action artifacts](https://github.com/yume-chan/VolumeManager/actions).
+
+Some hand-picked versions can also be downloaded from [releases](https://github.com/yume-chan/VolumeManager/releases).
+
 ## Usage
 
 1. Install and enable [Shizuku](https://shizuku.rikka.app/)
