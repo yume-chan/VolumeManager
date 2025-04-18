@@ -3,7 +3,9 @@
 package moe.chensi.volume
 
 import android.annotation.SuppressLint
+import android.companion.virtual.VirtualDeviceManager
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.os.UserHandle
 import android.provider.Settings
@@ -24,7 +26,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -50,15 +51,35 @@ class MainActivity : ComponentActivity() {
             Manager.getShizukuService("permissionmgr", "android.permission.IPermissionManager")
         )
 
-        permissionManager.call(
-            "grantRuntimePermission",
-            packageName,
-            android.Manifest.permission.WRITE_SECURE_SETTINGS,
-            Reflect.onClass(UserHandle::class.java).call("of", 0).get()
+        Log.i(TAG, "packageName: $packageName")
+
+        val writeSecureSettingsPermission = packageManager.checkPermission(
+            android.Manifest.permission.WRITE_SECURE_SETTINGS, packageName
         )
 
+        Log.i(TAG, "Permission state before: $writeSecureSettingsPermission")
+
+        if (writeSecureSettingsPermission == PackageManager.PERMISSION_DENIED) {
+            if (Build.VERSION.SDK_INT >= 34) {
+                permissionManager.call(
+                    "grantRuntimePermission",
+                    packageName,
+                    android.Manifest.permission.WRITE_SECURE_SETTINGS,
+                    Reflect.onClass(VirtualDeviceManager::class.java)
+                        .get("PERSISTENT_DEVICE_ID_DEFAULT")
+                )
+            } else {
+                permissionManager.call(
+                    "grantRuntimePermission",
+                    packageName,
+                    android.Manifest.permission.WRITE_SECURE_SETTINGS,
+                    Reflect.onClass(UserHandle::class.java).get("CURRENT")
+                )
+            }
+        }
+
         Log.i(
-            TAG, "Permission state: ${
+            TAG, "Permission state after: ${
                 packageManager.checkPermission(
                     android.Manifest.permission.WRITE_SECURE_SETTINGS, packageName
                 )
@@ -87,6 +108,14 @@ class MainActivity : ComponentActivity() {
             Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
             enabledAccessibilityServices
         )
+
+        Log.i(
+            TAG, "enabled accessibility services after: ${
+                Settings.Secure.getString(
+                    contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+                )
+            }"
+        )
     }
 
     @SuppressLint("DiscouragedPrivateApi")
@@ -95,51 +124,20 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         application = super.getApplication() as MyApplication
+        val manager = Manager(this@MainActivity, application.dataStore)
+        var accessibilityServiceEnabled by mutableStateOf<Boolean?>(null)
 
         setContent {
-            var shizukuReady by remember { mutableStateOf(false) }
-            var shizukuPermission by remember { mutableStateOf(false) }
-            var shizukuPermissionDenied by remember { mutableStateOf(false) }
-
-            LaunchedEffect("shizuku") {
-                Shizuku.addBinderReceivedListenerSticky {
-                    if (Shizuku.isPreV11()) {
-                        return@addBinderReceivedListenerSticky
-                    }
-
-                    shizukuReady = true
-
-                    if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
-                        shizukuPermission = true
-                    } else if (Shizuku.shouldShowRequestPermissionRationale()) {
-                        shizukuPermissionDenied = true
+            LaunchedEffect(manager.shizukuPermission) {
+                if (manager.shizukuPermission == true) {
+                    try {
+                        enableAccessibilityService("$packageName/${Service::class.java.canonicalName}")
+                        accessibilityServiceEnabled = true
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to enable accessibility service", e)
+                        accessibilityServiceEnabled = false
                     }
                 }
-                Shizuku.addBinderDeadListener {
-                    shizukuReady = false
-                }
-
-                Shizuku.addRequestPermissionResultListener { _, grantResult ->
-                    if (grantResult == PackageManager.PERMISSION_GRANTED) {
-                        shizukuPermission = true
-                    }
-                }
-            }
-
-            var manager by remember { mutableStateOf<Manager?>(null) }
-
-            LaunchedEffect(shizukuPermission) {
-                if (!shizukuPermission) {
-                    return@LaunchedEffect
-                }
-
-                if (manager != null) {
-                    return@LaunchedEffect
-                }
-
-                enableAccessibilityService("$packageName/${Service::class.java.canonicalName}")
-
-                manager = Manager(this@MainActivity, application.dataStore)
             }
 
             VolumeManagerTheme {
@@ -152,21 +150,33 @@ class MainActivity : ComponentActivity() {
                             .padding(16.dp)
                     ) {
                         Greeting(
-                            ready = shizukuReady,
+                            ready = manager.shizukuReady,
                         )
 
-                        if (shizukuReady) {
-                            if (shizukuPermissionDenied) {
-                                Text("Permission denied")
-                            } else if (!shizukuPermission) {
-                                Button(onClick = { Shizuku.requestPermission(0) }) {
-                                    Text(text = "Request permission")
-                                }
-                            } else {
-                                Text("Permission granted")
+                        if (manager.shizukuReady) {
+                            when (manager.shizukuPermission) {
+                                true -> {
+                                    Text("Permission granted")
 
-                                if (manager != null) {
-                                    AppVolumeList(manager!!.apps.values)
+                                    when (accessibilityServiceEnabled) {
+                                        true -> {
+                                            Text("Accessibility service enabled")
+                                        }
+
+                                        false -> {
+                                            Text("Accessibility service failed to enable")
+                                        }
+
+                                        null -> {}
+                                    }
+
+                                    AppVolumeList(manager.apps.values)
+                                }
+
+                                false -> {
+                                    Button(onClick = { Shizuku.requestPermission(0) }) {
+                                        Text(text = "Request permission")
+                                    }
                                 }
                             }
                         }

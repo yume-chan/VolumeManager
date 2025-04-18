@@ -303,15 +303,16 @@ class Service : AccessibilityService() {
         Log.i(TAG, "onServiceConnected")
 
         ShizukuProvider.enableMultiProcessSupport(false)
+        manager = Manager(this, (application as MyApplication).dataStore)
 
         accessibilityButtonController.registerAccessibilityButtonCallback(object :
             AccessibilityButtonCallback() {
             override fun onClicked(controller: AccessibilityButtonController?) {
-                showView()
+                if (manager.shizukuPermission == true) {
+                    showView()
+                }
             }
         })
-
-        manager = Manager(this, (application as MyApplication).dataStore)
 
         Log.i(TAG, "onServiceConnected done ${serviceInfo.capabilities.toString(2)}")
     }
@@ -324,6 +325,10 @@ class Service : AccessibilityService() {
 
     override fun onKeyEvent(event: KeyEvent): Boolean {
         Log.i(TAG, "onKeyEvent ${event.action} ${event.keyCode}")
+
+        if (manager.shizukuPermission != true) {
+            return false
+        }
 
         when (event.keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP -> {
