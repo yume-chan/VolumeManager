@@ -26,9 +26,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import moe.chensi.volume.ui.theme.VolumeManagerTheme
 import org.joor.Reflect
@@ -44,63 +45,62 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var application: MyApplication
 
-    private fun enableAccessibilityService(name: String) {
-        val permissionManager = Reflect.on(getSystemService("permission"))
-        permissionManager.set(
-            "mPermissionManager",
-            Manager.getShizukuService("permissionmgr", "android.permission.IPermissionManager")
-        )
+    private fun grantSelfPermission(permission: String) {
+        val permissionManager = Reflect.on(getSystemService("permission")).apply {
+            set(
+                "mPermissionManager",
+                Manager.getShizukuService("permissionmgr", "android.permission.IPermissionManager")
+            )
+        }
 
-        Log.i(TAG, "packageName: $packageName")
+        var state = packageManager.checkPermission(permission, packageName)
+        if (state == PackageManager.PERMISSION_GRANTED) {
+            return
+        }
 
-        val writeSecureSettingsPermission = packageManager.checkPermission(
-            android.Manifest.permission.WRITE_SECURE_SETTINGS, packageName
-        )
+        if (Build.VERSION.SDK_INT >= 34) {
+            permissionManager.call(
+                "grantRuntimePermission",
+                packageName,
+                android.Manifest.permission.WRITE_SECURE_SETTINGS,
+                Reflect.onClass(VirtualDeviceManager::class.java)
+                    .get("PERSISTENT_DEVICE_ID_DEFAULT")
+            )
 
-        Log.i(TAG, "Permission state before: $writeSecureSettingsPermission")
-
-        if (writeSecureSettingsPermission == PackageManager.PERMISSION_DENIED) {
-            if (Build.VERSION.SDK_INT >= 34) {
-                permissionManager.call(
-                    "grantRuntimePermission",
-                    packageName,
-                    android.Manifest.permission.WRITE_SECURE_SETTINGS,
-                    Reflect.onClass(VirtualDeviceManager::class.java)
-                        .get("PERSISTENT_DEVICE_ID_DEFAULT")
-                )
-            } else {
-                permissionManager.call(
-                    "grantRuntimePermission",
-                    packageName,
-                    android.Manifest.permission.WRITE_SECURE_SETTINGS,
-                    Reflect.onClass(UserHandle::class.java).get("CURRENT")
-                )
+            state = packageManager.checkPermission(permission, packageName)
+            if (state == PackageManager.PERMISSION_GRANTED) {
+                return
             }
         }
 
-        Log.i(
-            TAG, "Permission state after: ${
-                packageManager.checkPermission(
-                    android.Manifest.permission.WRITE_SECURE_SETTINGS, packageName
-                )
-            }"
+        permissionManager.call(
+            "grantRuntimePermission",
+            packageName,
+            android.Manifest.permission.WRITE_SECURE_SETTINGS,
+            Reflect.onClass(UserHandle::class.java).get("CURRENT")
         )
 
+        state = packageManager.checkPermission(permission, packageName)
+        if (state == PackageManager.PERMISSION_GRANTED) {
+            return
+        }
+
+        throw SecurityException("Can't grant self permission $permission")
+    }
+
+    private fun enableAccessibilityService(name: String) {
         Settings.Secure.putInt(contentResolver, Settings.Secure.ACCESSIBILITY_ENABLED, 1)
 
         var enabledAccessibilityServices = Settings.Secure.getString(
             contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
         )
 
-        if (enabledAccessibilityServices.isNullOrBlank()) {
-            Log.i(TAG, "enabled accessibility services is empty")
+        if (enabledAccessibilityServices == null) {
             enabledAccessibilityServices = name
         } else if (enabledAccessibilityServices.contains(name)) {
-            Log.i(TAG, "enabled accessibility services already includes $name")
             return
         } else {
-            Log.i(TAG, "enabled accessibility services doesn't include $name")
-            enabledAccessibilityServices += "$SERVICE_NAME_SEPARATOR$name"
+            enabledAccessibilityServices += SERVICE_NAME_SEPARATOR + name
         }
 
         Settings.Secure.putString(
@@ -109,13 +109,12 @@ class MainActivity : ComponentActivity() {
             enabledAccessibilityServices
         )
 
-        Log.i(
-            TAG, "enabled accessibility services after: ${
-                Settings.Secure.getString(
-                    contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
-                )
-            }"
+        enabledAccessibilityServices = Settings.Secure.getString(
+            contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
         )
+        if (enabledAccessibilityServices == null || !enabledAccessibilityServices.contains(name)) {
+            throw SecurityException("Can't enable accessibility service $name")
+        }
     }
 
     @SuppressLint("DiscouragedPrivateApi")
@@ -125,59 +124,50 @@ class MainActivity : ComponentActivity() {
 
         application = super.getApplication() as MyApplication
         val manager = Manager(this@MainActivity, application.dataStore)
-        var accessibilityServiceEnabled by mutableStateOf<Boolean?>(null)
 
         setContent {
-            LaunchedEffect(manager.shizukuPermission) {
-                if (manager.shizukuPermission == true) {
-                    try {
-                        enableAccessibilityService("$packageName/${Service::class.java.canonicalName}")
-                        accessibilityServiceEnabled = true
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to enable accessibility service", e)
-                        accessibilityServiceEnabled = false
-                    }
-                }
-            }
-
             VolumeManagerTheme {
-                Scaffold(modifier = Modifier.fillMaxSize(),
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
                     topBar = { TopAppBar(title = { Text("Volume Manager") }) }) { innerPadding ->
                     Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier
                             .padding(innerPadding)
                             .padding(16.dp)
                     ) {
-                        Greeting(
-                            ready = manager.shizukuReady,
-                        )
-
                         if (manager.shizukuReady) {
-                            when (manager.shizukuPermission) {
-                                true -> {
-                                    Text("Permission granted")
+                            if (manager.shizukuPermission) {
+                                AccessibilityService()
+                                AppVolumeList(manager.apps.values)
+                            } else {
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(
+                                        16.dp,
+                                        Alignment.CenterVertically
+                                    )
+                                ) {
+                                    Text("Shizuku is installed and enabled")
+                                    Text("Allow volume manager to access Shizuku?")
 
-                                    when (accessibilityServiceEnabled) {
-                                        true -> {
-                                            Text("Accessibility service enabled")
-                                        }
-
-                                        false -> {
-                                            Text("Accessibility service failed to enable")
-                                        }
-
-                                        null -> {}
-                                    }
-
-                                    AppVolumeList(manager.apps.values)
-                                }
-
-                                false -> {
                                     Button(onClick = { Shizuku.requestPermission(0) }) {
-                                        Text(text = "Request permission")
+                                        Text(text = "Add permission")
                                     }
                                 }
+                            }
+                        } else {
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(
+                                    16.dp,
+                                    Alignment.CenterVertically
+                                )
+                            ) {
+                                Text("Waiting for Shizuku...")
+                                Text("Make sure Shizuku is installed and enabled")
                             }
                         }
                     }
@@ -186,19 +176,31 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-}
+    @Composable
+    fun AccessibilityService() {
+        var permissionGranted by remember { mutableStateOf(false) }
+        var serviceEnabled by remember { mutableStateOf(false) }
 
-@Composable
-fun Greeting(ready: Boolean, modifier: Modifier = Modifier) {
-    Text(
-        text = "Shizuku is ${if (ready) "ready" else "not ready"}", modifier = modifier
-    )
-}
+        LaunchedEffect(0) {
+            try {
+                grantSelfPermission(android.Manifest.permission.WRITE_SECURE_SETTINGS)
+                permissionGranted = true
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to grant permission", e)
+                return@LaunchedEffect
+            }
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    VolumeManagerTheme {
-        Greeting(false)
+            try {
+                enableAccessibilityService("$packageName/${Service::class.java.canonicalName}")
+                serviceEnabled = true
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to enable accessibility service", e)
+            }
+        }
+
+        Column {
+            Text(text = "Permission granted: $permissionGranted")
+            Text(text = "Service enabled: $serviceEnabled")
+        }
     }
 }

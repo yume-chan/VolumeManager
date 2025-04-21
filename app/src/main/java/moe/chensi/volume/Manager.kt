@@ -7,7 +7,6 @@ import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.media.AudioManager
 import android.media.AudioPlaybackConfiguration
-import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -84,7 +83,7 @@ class Manager(private val context: Context, private val dataStore: DataStore<Pre
 
         Shizuku.addRequestPermissionResultListener { _, grantResult ->
             _shizukuPermission = grantResult == PackageManager.PERMISSION_GRANTED
-            if (_shizukuPermission == true) {
+            if (_shizukuPermission) {
                 start()
             }
         }
@@ -117,7 +116,6 @@ class Manager(private val context: Context, private val dataStore: DataStore<Pre
             set(value) {
                 _volume = value
 
-                Log.i("VolumeManager", "Set volume for $name to $value")
                 for (player in players) {
                     setVolumeMethod.invoke(player.player, value)
                 }
@@ -141,18 +139,16 @@ class Manager(private val context: Context, private val dataStore: DataStore<Pre
             dataStore.data.collect { preferences ->
                 for ((key, volume) in preferences.asMap()) {
                     val packageName = key.name
-                    if (apps.containsKey(packageName)) {
-                        apps[packageName]!!.setVolume(volume as Float, initializing)
-                    } else {
+                    apps.getOrPut(packageName) {
                         val appInfo = packageManager.getApplicationInfo(packageName, 0)
-                        apps[packageName] = App(
+                        App(
                             packageName,
                             appInfo.loadLabel(packageManager).toString(),
                             appInfo.loadIcon(packageManager),
                             mutableStateListOf(),
                             dataStore
-                        ).apply { setVolume(volume as Float, initializing) }
-                    }
+                        )
+                    }.setVolume(volume as Float, initializing)
                 }
 
                 if (initializing) {
