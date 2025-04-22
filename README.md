@@ -4,6 +4,8 @@
 
 Control each app's volume independently. [Shizuku](https://shizuku.rikka.app/) is used to access privileged APIs.
 
+Requires Android 13.
+
 ![Screenshot](screenshot.png)
 
 ## Download
@@ -28,8 +30,9 @@ This app uses hidden API to directly change each audio stream's volume.
 
 SoundMaster uses MediaProjection API to record audio from each app and apply post-effects.
 
-| Feature                        | Volume Manager | SoundMaster    |
-| ------------------------------ | -------------- | -------------- |
+| Feature                        | Volume Manager  | SoundMaster     |
+| ------------------------------ | --------------- | --------------- |
+| Minimal Android version        | 13              | 10              |
 | Control volume of each app     | ✅              | ✅              |
 | Set output device for each app | ❌ <sup>1</sup> | ✅              |
 | Change left-right balance      | ❌ <sup>2</sup> | ✅              |
@@ -45,12 +48,13 @@ SoundMaster uses MediaProjection API to record audio from each app and apply pos
 
 ## How does it work
 
-1. Use [`AudioManager#getActivePlaybackConfigurations()`](https://developer.android.com/reference/android/media/AudioManager#getActivePlaybackConfigurations()) to get list of [`AudioPlaybackConfiguration`](https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/media/java/android/media/AudioPlaybackConfiguration.java;drc=e282cc572ef848b1cb8d622c2c4939aac37c3b27).
+1. Use [`AudioManager#getActivePlaybackConfigurations()`](<https://developer.android.com/reference/android/media/AudioManager#getActivePlaybackConfigurations()>) to get list of [`AudioPlaybackConfiguration`](https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/media/java/android/media/AudioPlaybackConfiguration.java;drc=e282cc572ef848b1cb8d622c2c4939aac37c3b27).
 
-    Each `AudioPlaybackConfiguration` represents a audio player, like [`AudioTrack`](https://developer.android.com/reference/android/media/AudioTrack) and [`MediaPlayer`](https://developer.android.com/media/platform/mediaplayer)
-2. Use [`ActivityManager#getRunningAppProcesses()`](https://developer.android.com/reference/android/app/ActivityManager#getRunningAppProcesses()) and [`PackageManager#getApplicationInfo()`](https://developer.android.com/reference/android/content/pm/PackageManager#getApplicationInfo(java.lang.String,%20android.content.pm.PackageManager.ApplicationInfoFlags)) to map and group `AudioPlaybackConfiguration#getClientPid()` to apps
+   Each `AudioPlaybackConfiguration` represents a audio player, like [`AudioTrack`](https://developer.android.com/reference/android/media/AudioTrack) and [`MediaPlayer`](https://developer.android.com/media/platform/mediaplayer)
+
+2. Use [`ActivityManager#getRunningAppProcesses()`](<https://developer.android.com/reference/android/app/ActivityManager#getRunningAppProcesses()>) and [`PackageManager#getApplicationInfo()`](<https://developer.android.com/reference/android/content/pm/PackageManager#getApplicationInfo(java.lang.String,%20android.content.pm.PackageManager.ApplicationInfoFlags)>) to map and group `AudioPlaybackConfiguration#getClientPid()` to apps
 3. Use `AudioPlaybackConfiguration#getPlayerProxy()` and [`IPlayer.setVolume()`](https://cs.android.com/android/platform/superproject/main/+/main:frameworks/av/media/libaudioclient/aidl/android/media/IPlayer.aidl;l=29;drc=75e48fea431b1de2bf1715eb5c22ba4c794200bd) to update the internal volume multiplier
-4. Use [`AudioManager#registerAudioPlaybackCallback()`](https://developer.android.com/reference/android/media/AudioManager?hl=en#registerAudioPlaybackCallback(android.media.AudioManager.AudioPlaybackCallback,%20android.os.Handler)) to listen for new `AudioPlaybackConfiguration`s and apply current volume to them.
+4. Use [`AudioManager#registerAudioPlaybackCallback()`](<https://developer.android.com/reference/android/media/AudioManager?hl=en#registerAudioPlaybackCallback(android.media.AudioManager.AudioPlaybackCallback,%20android.os.Handler)>) to listen for new `AudioPlaybackConfiguration`s and apply current volume to them.
 
 ## Note
 
