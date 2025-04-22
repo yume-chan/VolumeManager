@@ -10,9 +10,9 @@ android {
 
     defaultConfig {
         applicationId = "moe.chensi.volume"
-        minSdk = 28
+        minSdk = 33
         targetSdk = 35
-        versionCode = 2
+        versionCode = 3
         versionName = "0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

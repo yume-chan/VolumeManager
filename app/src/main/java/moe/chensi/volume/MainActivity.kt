@@ -30,10 +30,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import moe.chensi.volume.ui.theme.VolumeManagerTheme
 import org.joor.Reflect
 import rikka.shizuku.Shizuku
+import rikka.shizuku.ShizukuRemoteProcess
 
 @SuppressLint("PrivateApi", "SoonBlockedPrivateApi")
 class MainActivity : ComponentActivity() {
@@ -45,40 +47,17 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var application: MyApplication
 
+    @SuppressLint("MissingPermission")
     private fun grantSelfPermission(permission: String) {
-        val permissionManager = Reflect.on(getSystemService("permission")).apply {
-            set(
-                "mPermissionManager",
-                Manager.getShizukuService("permissionmgr", "android.permission.IPermissionManager")
-            )
-        }
-
         var state = packageManager.checkPermission(permission, packageName)
         if (state == PackageManager.PERMISSION_GRANTED) {
             return
         }
 
-        if (Build.VERSION.SDK_INT >= 34) {
-            permissionManager.call(
-                "grantRuntimePermission",
-                packageName,
-                android.Manifest.permission.WRITE_SECURE_SETTINGS,
-                Reflect.onClass(VirtualDeviceManager::class.java)
-                    .get("PERSISTENT_DEVICE_ID_DEFAULT")
-            )
-
-            state = packageManager.checkPermission(permission, packageName)
-            if (state == PackageManager.PERMISSION_GRANTED) {
-                return
-            }
-        }
-
-        permissionManager.call(
-            "grantRuntimePermission",
-            packageName,
-            android.Manifest.permission.WRITE_SECURE_SETTINGS,
-            Reflect.onClass(UserHandle::class.java).get("CURRENT")
-        )
+        val process = Reflect.onClass(Shizuku::class.java).call(
+            "newProcess", arrayOf("pm", "grant", packageName, permission), null, null
+        ).get<ShizukuRemoteProcess>()
+        process.waitFor()
 
         state = packageManager.checkPermission(permission, packageName)
         if (state == PackageManager.PERMISSION_GRANTED) {
@@ -95,7 +74,7 @@ class MainActivity : ComponentActivity() {
             contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
         )
 
-        if (enabledAccessibilityServices == null) {
+        if (enabledAccessibilityServices.isNullOrBlank()) {
             enabledAccessibilityServices = name
         } else if (enabledAccessibilityServices.contains(name)) {
             return
@@ -145,12 +124,14 @@ class MainActivity : ComponentActivity() {
                                     modifier = Modifier.fillMaxSize(),
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.spacedBy(
-                                        16.dp,
-                                        Alignment.CenterVertically
+                                        16.dp, Alignment.CenterVertically
                                     )
                                 ) {
                                     Text("Shizuku is installed and enabled")
-                                    Text("Allow volume manager to access Shizuku?")
+                                    Text(
+                                        textAlign = TextAlign.Center,
+                                        text = "Allow volume manager to access Shizuku?"
+                                    )
 
                                     Button(onClick = { Shizuku.requestPermission(0) }) {
                                         Text(text = "Add permission")
@@ -162,12 +143,14 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier.fillMaxSize(),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.spacedBy(
-                                    16.dp,
-                                    Alignment.CenterVertically
+                                    16.dp, Alignment.CenterVertically
                                 )
                             ) {
                                 Text("Waiting for Shizuku...")
-                                Text("Make sure Shizuku is installed and enabled")
+                                Text(
+                                    textAlign = TextAlign.Center,
+                                    text = "Make sure Shizuku is installed and enabled"
+                                )
                             }
                         }
                     }
@@ -187,7 +170,6 @@ class MainActivity : ComponentActivity() {
                 permissionGranted = true
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to grant permission", e)
-                return@LaunchedEffect
             }
 
             try {

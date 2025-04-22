@@ -152,12 +152,11 @@ class Manager(private val context: Context, private val dataStore: DataStore<Pre
                 }
 
                 if (initializing) {
-                    val audioManager =
-                        Objects.requireNonNull(context.getSystemService(AudioManager::class.java)!!)
-                    Reflect.on(audioManager).set(
+                    Reflect.onClass(AudioManager::class.java).set(
                         "sService",
                         getShizukuService(Context.AUDIO_SERVICE, "android.media.IAudioService")
                     )
+                    val audioManager = context.getSystemService(AudioManager::class.java)!!
 
                     val playbackConfigurations = audioManager.activePlaybackConfigurations
 
