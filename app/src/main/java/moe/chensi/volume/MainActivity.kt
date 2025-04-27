@@ -3,11 +3,8 @@
 package moe.chensi.volume
 
 import android.annotation.SuppressLint
-import android.companion.virtual.VirtualDeviceManager
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
-import android.os.UserHandle
 import android.provider.Settings
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -96,6 +93,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @SuppressLint("DiscouragedPrivateApi")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -133,7 +131,9 @@ class MainActivity : ComponentActivity() {
                                         text = "Allow volume manager to access Shizuku?"
                                     )
 
-                                    Button(onClick = { Shizuku.requestPermission(0) }) {
+                                    Button(onClick = {
+                                        manager.requestPermission()
+                                    }) {
                                         Text(text = "Add permission")
                                     }
                                 }

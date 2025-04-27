@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.media.AudioManager
 import android.media.AudioPlaybackConfiguration
+import android.os.IBinder
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -17,6 +18,9 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
+import com.rosan.dhizuku.api.Dhizuku
+import com.rosan.dhizuku.api.DhizukuBinderWrapper
+import com.rosan.dhizuku.api.DhizukuRequestPermissionListener
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -24,13 +28,13 @@ import kotlinx.coroutines.launch
 import org.joor.Reflect
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuBinderWrapper
-import rikka.shizuku.SystemServiceHelper
 import java.lang.reflect.Method
-import java.util.Objects
 
 @SuppressLint("PrivateApi")
 class Manager(private val context: Context, private val dataStore: DataStore<Preferences>) {
     companion object {
+        private const val DHIZUKU = true
+
         private val getClientPidMethod: Method =
             AudioPlaybackConfiguration::class.java.getDeclaredMethod("getClientPid")
         private val getPlayerProxyMethod: Method =
@@ -40,12 +44,24 @@ class Manager(private val context: Context, private val dataStore: DataStore<Pre
                 "setVolume", Float::class.javaPrimitiveType
             )
 
-        fun getShizukuService(name: String, type: String): Any {
-            val binder = SystemServiceHelper.getSystemService(name)
-            val wrapper = ShizukuBinderWrapper(binder)
-            return Reflect.onClass("$type\$Stub").call("asInterface", wrapper).get()
+        fun wrapBinder(proxy: Any) {
+            val reflect = Reflect.on(proxy)
+            var binder = reflect.get<IBinder>("mRemote")
+            binder = if (DHIZUKU) {
+                if (binder is DhizukuBinderWrapper) {
+                    return
+                } else {
+                    Dhizuku.binderWrapper(binder)
+                }
+            } else {
+                if (binder is ShizukuBinderWrapper) {
+                    return
+                } else {
+                    ShizukuBinderWrapper(binder)
+                }
+            }
+            reflect.set("mRemote", binder)
         }
-
     }
 
     private var _shizukuReady by mutableStateOf(false)
@@ -62,29 +78,39 @@ class Manager(private val context: Context, private val dataStore: DataStore<Pre
     val apps = mutableStateMapOf<String, App>()
 
     init {
-        Shizuku.addBinderReceivedListenerSticky {
-            if (Shizuku.isPreV11()) {
-                return@addBinderReceivedListenerSticky
-            }
+        if (DHIZUKU) {
+            Dhizuku.init()
+            _shizukuReady = true
 
-            if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
+            if (Dhizuku.isPermissionGranted()) {
                 _shizukuPermission = true
                 start()
-            } else {
-                _shizukuPermission = false
+            }
+        } else {
+            Shizuku.addBinderReceivedListenerSticky {
+                if (Shizuku.isPreV11()) {
+                    return@addBinderReceivedListenerSticky
+                }
+
+                if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
+                    _shizukuPermission = true
+                    start()
+                } else {
+                    _shizukuPermission = false
+                }
+
+                _shizukuReady = true
             }
 
-            _shizukuReady = true
-        }
+            Shizuku.addBinderDeadListener {
+                _shizukuReady = false
+            }
 
-        Shizuku.addBinderDeadListener {
-            _shizukuReady = false
-        }
-
-        Shizuku.addRequestPermissionResultListener { _, grantResult ->
-            _shizukuPermission = grantResult == PackageManager.PERMISSION_GRANTED
-            if (_shizukuPermission) {
-                start()
+            Shizuku.addRequestPermissionResultListener { _, grantResult ->
+                _shizukuPermission = grantResult == PackageManager.PERMISSION_GRANTED
+                if (_shizukuPermission) {
+                    start()
+                }
             }
         }
     }
@@ -129,9 +155,10 @@ class Manager(private val context: Context, private val dataStore: DataStore<Pre
     }
 
     private fun start() {
-        Reflect.onClass("android.app.ActivityThread").set(
-            "sPackageManager", getShizukuService("package", "android.content.pm.IPackageManager")
-        )
+        Reflect.onClass("android.app.ActivityThread").apply {
+            call("getPackageManager")
+            wrapBinder(get("sPackageManager"))
+        }
 
         scope.launch {
             var initializing = true
@@ -152,10 +179,10 @@ class Manager(private val context: Context, private val dataStore: DataStore<Pre
                 }
 
                 if (initializing) {
-                    Reflect.onClass(AudioManager::class.java).set(
-                        "sService",
-                        getShizukuService(Context.AUDIO_SERVICE, "android.media.IAudioService")
-                    )
+                    Reflect.onClass(AudioManager::class.java).apply {
+                        call("getService")
+                        wrapBinder(get("sService"))
+                    }
                     val audioManager = context.getSystemService(AudioManager::class.java)!!
 
                     val playbackConfigurations = audioManager.activePlaybackConfigurations
@@ -183,8 +210,8 @@ class Manager(private val context: Context, private val dataStore: DataStore<Pre
     fun processAudioPlaybackConfigurations(
         apps: MutableMap<String, App>, configs: List<AudioPlaybackConfiguration>
     ) {
-        val activityService =
-            Reflect.on(getShizukuService(Context.ACTIVITY_SERVICE, "android.app.IActivityManager"))
+        val activityService = Reflect.onClass(ActivityManager::class.java).call("getService")
+            .apply { wrapBinder(get()) }
 
         val runningProcesses = activityService.call("getRunningAppProcesses")
             .get<List<ActivityManager.RunningAppProcessInfo>>()
@@ -209,6 +236,21 @@ class Manager(private val context: Context, private val dataStore: DataStore<Pre
 
             setVolumeMethod.invoke(player, app.volume)
             app.players.add(Player(config, player))
+        }
+    }
+
+    fun requestPermission() {
+        if (DHIZUKU) {
+            Dhizuku.requestPermission(object : DhizukuRequestPermissionListener() {
+                override fun onRequestPermission(grantResult: Int) {
+                    if (grantResult == PackageManager.PERMISSION_GRANTED) {
+                        _shizukuPermission = true
+                        start()
+                    }
+                }
+            })
+        } else {
+            Shizuku.requestPermission(0)
         }
     }
 }

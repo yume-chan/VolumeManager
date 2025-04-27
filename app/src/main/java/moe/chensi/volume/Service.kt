@@ -14,7 +14,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.PixelFormat
 import android.media.AudioManager
-import android.os.Build
 import android.os.CountDownTimer
 import android.util.Log
 import android.view.Gravity
@@ -58,7 +57,6 @@ import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import org.joor.Reflect
 import rikka.shizuku.ShizukuProvider
-import java.util.Objects
 
 class Service : AccessibilityService() {
     companion object {
@@ -69,18 +67,14 @@ class Service : AccessibilityService() {
     }
 
     private val windowManager: WindowManager by lazy {
-        Objects.requireNonNull(
-            getSystemService(
-                WindowManager::class.java
-            )!!
-        )
+        getSystemService(
+            WindowManager::class.java
+        )!!
     }
     private val audioManager: AudioManager by lazy {
-        Objects.requireNonNull(
-            getSystemService(
-                AudioManager::class.java
-            )!!
-        )
+        getSystemService(
+            AudioManager::class.java
+        )!!
     }
     private lateinit var manager: Manager
 
@@ -130,7 +124,7 @@ class Service : AccessibilityService() {
 
                 Log.i(TAG, "onAttachedToWindow")
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && windowManager.isCrossWindowBlurEnabled && isHardwareAccelerated) {
+                if (windowManager.isCrossWindowBlurEnabled && isHardwareAccelerated) {
                     background =
                         Reflect.on(rootSurfaceControl).call("createBackgroundBlurDrawable").apply {
                             call("setBlurRadius", 200)
@@ -186,7 +180,8 @@ class Service : AccessibilityService() {
                         ) {
                             AppVolumeList(manager.apps.values, onChange = { startIdleTimer() }) {
                                 item(AudioManager.STREAM_MUSIC) {
-                                    StreamVolumeSlider(AudioManager.STREAM_MUSIC,
+                                    StreamVolumeSlider(
+                                        AudioManager.STREAM_MUSIC,
                                         volumeChanged,
                                         MaterialMusicNote,
                                         "Music",
@@ -194,7 +189,8 @@ class Service : AccessibilityService() {
                                 }
 
                                 item(AudioManager.STREAM_NOTIFICATION) {
-                                    StreamVolumeSlider(AudioManager.STREAM_NOTIFICATION,
+                                    StreamVolumeSlider(
+                                        AudioManager.STREAM_NOTIFICATION,
                                         volumeChanged,
                                         MaterialNotifications,
                                         "Notifications",
@@ -308,7 +304,7 @@ class Service : AccessibilityService() {
         accessibilityButtonController.registerAccessibilityButtonCallback(object :
             AccessibilityButtonCallback() {
             override fun onClicked(controller: AccessibilityButtonController?) {
-                if (manager.shizukuPermission == true) {
+                if (manager.shizukuPermission) {
                     showView()
                 }
             }
@@ -326,7 +322,7 @@ class Service : AccessibilityService() {
     override fun onKeyEvent(event: KeyEvent): Boolean {
         Log.i(TAG, "onKeyEvent ${event.action} ${event.keyCode}")
 
-        if (manager.shizukuPermission != true) {
+        if (!manager.shizukuPermission) {
             return false
         }
 

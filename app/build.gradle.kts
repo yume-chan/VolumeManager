@@ -54,6 +54,7 @@ dependencies {
 
     implementation(libs.shizuku.api)
     implementation(libs.shizuku.provider)
+    implementation(libs.dhizuku.api)
     implementation(libs.hiddenapibypass)
 
     implementation(libs.androidx.datastore.core.android)
