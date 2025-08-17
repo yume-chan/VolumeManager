@@ -4,6 +4,7 @@ on:
       - main
     paths-ignore:
       - README.md
+  workflow_dispatch:
 
 jobs:
   build:
