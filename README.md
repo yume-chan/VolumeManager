@@ -1,5 +1,8 @@
 # Volume Manager
 
+[<img src="https://img.shields.io/f-droid/v/moe.chensi.volume?baseUrl=https://apt.izzysoft.de/fdroid&label=IzzyOnDroid" alt="IzzyOnDroid">](https://apt.izzysoft.de/fdroid/index/apk/moe.chensi.volume)
+[<img src="https://shields.rbtlog.dev/simple/moe.chensi.volume" alt="RB shield">](https://shields.rbtlog.dev/moe.chensi.volume)
+
 **Work in progress**
 
 Control each app's volume independently. [Shizuku](https://shizuku.rikka.app/) is used to access privileged APIs.
