@@ -3,11 +3,13 @@ package moe.chensi.volume
 import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.media.AudioManager
 import android.media.AudioPlaybackConfiguration
 import android.os.IBinder
+import android.os.UserHandle
 import android.os.UserManager
 import android.util.Log
 import androidx.compose.runtime.getValue
@@ -141,9 +143,10 @@ class Manager(private val context: Context, private val dataStore: DataStore<Pre
 
     @SuppressLint("MissingPermission")
     private fun createApp(packageName: String): App {
-        for (user in userManager.getUserHandles(true)) {
+        for (user in Reflect.on(userManager).call("getUserHandles", true).get<List<UserHandle>>()) {
             try {
-                val appInfo = packageManager.getApplicationInfoAsUser(packageName, 0, user)
+                val appInfo = Reflect.on(packageManager)
+                    .call("getApplicationInfoAsUser", packageName, 0, user).get<ApplicationInfo>()
                 Log.d(
                     "VolumeManager", "Found app info for: userId: $user, packageName: $packageName"
                 )
