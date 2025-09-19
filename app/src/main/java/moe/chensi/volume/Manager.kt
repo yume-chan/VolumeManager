@@ -7,9 +7,11 @@ import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.media.AudioManager
 import android.media.AudioPlaybackConfiguration
+import android.os.IBinder
+import android.os.UserManager
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -24,9 +26,7 @@ import kotlinx.coroutines.launch
 import org.joor.Reflect
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuBinderWrapper
-import rikka.shizuku.SystemServiceHelper
 import java.lang.reflect.Method
-import java.util.Objects
 
 @SuppressLint("PrivateApi")
 class Manager(private val context: Context, private val dataStore: DataStore<Preferences>) {
@@ -40,12 +40,13 @@ class Manager(private val context: Context, private val dataStore: DataStore<Pre
                 "setVolume", Float::class.javaPrimitiveType
             )
 
-        fun getShizukuService(name: String, type: String): Any {
-            val binder = SystemServiceHelper.getSystemService(name)
-            val wrapper = ShizukuBinderWrapper(binder)
-            return Reflect.onClass("$type\$Stub").call("asInterface", wrapper).get()
+        fun wrapBinder(proxy: Any) {
+            Reflect.on(proxy).apply {
+                set("mRemote", get<IBinder>("mRemote").run {
+                    this as? ShizukuBinderWrapper ?: ShizukuBinderWrapper(this)
+                })
+            }
         }
-
     }
 
     private var _shizukuReady by mutableStateOf(false)
@@ -56,7 +57,16 @@ class Manager(private val context: Context, private val dataStore: DataStore<Pre
     val shizukuPermission
         get() = _shizukuPermission
 
-    private val packageManager: PackageManager = context.packageManager
+    private val activityManager = context.getSystemService(ActivityManager::class.java)!!.apply {
+        Reflect.onClass(ActivityManager::class.java).call("getService").get<Any>()
+            .apply { wrapBinder(this) }
+    }
+    private val packageManager: PackageManager = context.packageManager.apply {
+        Reflect.onClass("android.app.ActivityThread").call("getPackageManager").get<Any>()
+            .apply { wrapBinder(this) }
+    }
+    private val userManager = context.getSystemService(UserManager::class.java)!!
+        .apply { Reflect.on(this).get<Any>("mService").apply { wrapBinder(this) } }
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     val apps = mutableStateMapOf<String, App>()
@@ -95,12 +105,13 @@ class Manager(private val context: Context, private val dataStore: DataStore<Pre
         val packageName: String,
         val name: String,
         val icon: Drawable,
-        val players: MutableList<Player>,
         val dataStore: DataStore<Preferences>
     ) {
         companion object {
             val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
         }
+
+        val players: MutableList<Player> = mutableListOf()
 
         private var _volume by mutableFloatStateOf(1f)
         fun setVolume(value: Float, initializing: Boolean) {
@@ -128,39 +139,54 @@ class Manager(private val context: Context, private val dataStore: DataStore<Pre
             }
     }
 
-    private fun start() {
-        Reflect.onClass("android.app.ActivityThread").set(
-            "sPackageManager", getShizukuService("package", "android.content.pm.IPackageManager")
-        )
+    @SuppressLint("MissingPermission")
+    private fun createApp(packageName: String): App {
+        for (user in userManager.getUserHandles(true)) {
+            try {
+                val appInfo = packageManager.getApplicationInfoAsUser(packageName, 0, user)
+                Log.d(
+                    "VolumeManager", "Found app info for: userId: $user, packageName: $packageName"
+                )
 
+                return App(
+                    packageName,
+                    appInfo.loadLabel(packageManager).toString(),
+                    packageManager.getDrawable(packageName, appInfo.icon, appInfo)
+                        ?: packageManager.defaultActivityIcon,
+                    dataStore
+                )
+            } catch (_: PackageManager.NameNotFoundException) {
+                continue
+            }
+        }
+
+        Log.d("VolumeManager", "Can't find app info for: packageName: $packageName")
+        return App(packageName, packageName, packageManager.defaultActivityIcon, dataStore)
+    }
+
+    fun getOrCreateApp(packageName: String): App {
+        return apps.getOrPut(packageName) { createApp(packageName) }
+    }
+
+    private fun start() {
         scope.launch {
             var initializing = true
 
             dataStore.data.collect { preferences ->
                 for ((key, volume) in preferences.asMap()) {
                     val packageName = key.name
-                    apps.getOrPut(packageName) {
-                        val appInfo = packageManager.getApplicationInfo(packageName, 0)
-                        App(
-                            packageName,
-                            appInfo.loadLabel(packageManager).toString(),
-                            appInfo.loadIcon(packageManager),
-                            mutableStateListOf(),
-                            dataStore
-                        )
-                    }.setVolume(volume as Float, initializing)
+                    getOrCreateApp(packageName).setVolume(volume as Float, initializing)
                 }
 
                 if (initializing) {
-                    Reflect.onClass(AudioManager::class.java).set(
-                        "sService",
-                        getShizukuService(Context.AUDIO_SERVICE, "android.media.IAudioService")
-                    )
-                    val audioManager = context.getSystemService(AudioManager::class.java)!!
+                    val audioManager = context.getSystemService(AudioManager::class.java)!!.apply {
+                        Reflect.onClass(AudioManager::class.java).call("getService").get<Any>()
+                            .apply { wrapBinder(this) }
+                    }
 
                     val playbackConfigurations = audioManager.activePlaybackConfigurations
 
-                    processAudioPlaybackConfigurations(apps, playbackConfigurations)
+                    processAudioPlaybackConfigurations(playbackConfigurations)
 
                     audioManager.registerAudioPlaybackCallback(
                         object : AudioManager.AudioPlaybackCallback() {
@@ -168,7 +194,7 @@ class Manager(private val context: Context, private val dataStore: DataStore<Pre
                                 for (app in apps.values) {
                                     app.players.clear()
                                 }
-                                processAudioPlaybackConfigurations(apps, configs)
+                                processAudioPlaybackConfigurations(configs)
                             }
                         }, null
                     )
@@ -180,14 +206,8 @@ class Manager(private val context: Context, private val dataStore: DataStore<Pre
     }
 
     @SuppressLint("DiscouragedPrivateApi")
-    fun processAudioPlaybackConfigurations(
-        apps: MutableMap<String, App>, configs: List<AudioPlaybackConfiguration>
-    ) {
-        val activityService =
-            Reflect.on(getShizukuService(Context.ACTIVITY_SERVICE, "android.app.IActivityManager"))
-
-        val runningProcesses = activityService.call("getRunningAppProcesses")
-            .get<List<ActivityManager.RunningAppProcessInfo>>()
+    fun processAudioPlaybackConfigurations(configs: List<AudioPlaybackConfiguration>) {
+        val runningProcesses = activityManager.runningAppProcesses
 
         for (config in configs) {
             val player = getPlayerProxyMethod.invoke(config) ?: continue
@@ -196,16 +216,10 @@ class Manager(private val context: Context, private val dataStore: DataStore<Pre
             val process = runningProcesses.find { process -> process.pid == pid } ?: continue
 
             val packageName = process.processName.split(":")[0]
-            val app: App = apps[packageName] ?: run {
-                val appInfo = packageManager.getApplicationInfo(packageName, 0)
-                App(
-                    packageName,
-                    appInfo.loadLabel(packageManager).toString(),
-                    appInfo.loadIcon(packageManager),
-                    mutableStateListOf(),
-                    dataStore
-                ).also { apps[packageName] = it }
-            }
+            // It's possible to get the user ID from `process.uid / UserHandle.PER_USER_RANGE`.
+            // But since we need to get app info from all users at startup anyway,
+            // let's just reuse the method here.
+            val app = getOrCreateApp(packageName)
 
             setVolumeMethod.invoke(player, app.volume)
             app.players.add(Player(config, player))
