@@ -13,7 +13,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
@@ -104,25 +115,54 @@ fun TrackSlider(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppVolumeSlider(app: Manager.App, onChange: (() -> Unit)? = null) {
-    TrackSlider(cornerRadius = 20.dp, value = app.volume, onValueChange = { value ->
-        app.volume = value
-        onChange?.invoke()
-    }) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(16.dp, 8.dp)
-        ) {
-            Image(
-                bitmap = app.icon.toBitmap().asImageBitmap(),
-                contentDescription = "App icon",
-                modifier = Modifier.width(32.dp),
-                contentScale = ContentScale.FillWidth
-            )
+fun AppVolumeSlider(
+    app: Manager.App, menuVisible: Boolean, onChange: (() -> Unit)? = null
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        TrackSlider(
+            modifier = Modifier.weight(1f),
+            cornerRadius = 20.dp,
+            value = app.volume,
+            onValueChange = { value ->
+                app.volume = value
+                onChange?.invoke()
+            }) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(16.dp, 8.dp)
+            ) {
+                Image(
+                    bitmap = app.icon.toBitmap().asImageBitmap(),
+                    contentDescription = "App icon",
+                    modifier = Modifier.width(32.dp),
+                    contentScale = ContentScale.FillWidth
+                )
 
-            Text(text = app.name, color = Color.White)
+                Text(text = app.name, color = Color.White)
+            }
+        }
+
+        if (menuVisible) {
+            Box {
+                TooltipBox(
+                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                    tooltip = { PlainTooltip { Text(if (app.hidden) "Unhide app" else "Hide app") } },
+                    state = rememberTooltipState()
+                ) {
+                    IconButton(onClick = { app.hidden = !app.hidden }) {
+                        Icon(
+                            if (app.hidden) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                            contentDescription = if (app.hidden) "Unhide app" else "Hide app"
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -130,15 +170,65 @@ fun AppVolumeSlider(app: Manager.App, onChange: (() -> Unit)? = null) {
 @Composable
 fun AppVolumeList(
     apps: MutableCollection<Manager.App>,
+    showAll: Boolean,
     onChange: (() -> Unit)? = null,
     content: (LazyListScope.() -> Unit)? = null
 ) {
+    val activeVisibleApps = apps.filter { it.players.isNotEmpty() && !it.hidden }
+    val inactiveVisibleApps = apps.filter { it.players.isEmpty() && !it.hidden }
+    val hiddenApps = if (showAll) apps.filter { it.hidden } else emptyList()
+
     LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         content?.invoke(this)
 
-        items(items = apps.filter { it.players.size != 0 }.toList(),
-            key = { app -> app.packageName }) { app ->
-            AppVolumeSlider(app, onChange)
+        if (activeVisibleApps.isNotEmpty()) {
+            if (showAll) {
+                item {
+                    Text(
+                        text = "Active",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 4.dp)
+                    )
+                }
+            }
+
+            items(
+                items = activeVisibleApps.sortedBy { it.name },
+                key = { app -> app.packageName }) { app ->
+                AppVolumeSlider(app, showAll, onChange)
+            }
+        }
+
+        if (showAll) {
+            if (inactiveVisibleApps.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Inactive",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp)
+                    )
+                }
+                items(
+                    items = inactiveVisibleApps.sortedBy { it.name },
+                    key = { app -> app.packageName }) { app ->
+                    AppVolumeSlider(app, true, onChange)
+                }
+            }
+
+            if (hiddenApps.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Hidden",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp)
+                    )
+                }
+                items(
+                    items = hiddenApps.sortedBy { it.name },
+                    key = { app -> app.packageName }) { app ->
+                    AppVolumeSlider(app, true, onChange)
+                }
+            }
         }
     }
 }

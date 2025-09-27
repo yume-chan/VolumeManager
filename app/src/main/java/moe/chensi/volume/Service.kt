@@ -14,7 +14,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.PixelFormat
 import android.media.AudioManager
-import android.os.Build
 import android.os.CountDownTimer
 import android.util.Log
 import android.view.Gravity
@@ -60,6 +59,7 @@ import org.joor.Reflect
 import rikka.shizuku.ShizukuProvider
 import java.util.Objects
 
+@SuppressLint("AccessibilityPolicy")
 class Service : AccessibilityService() {
     companion object {
         private const val TAG = "VolumeManager.Service"
@@ -72,13 +72,6 @@ class Service : AccessibilityService() {
         Objects.requireNonNull(
             getSystemService(
                 WindowManager::class.java
-            )!!
-        )
-    }
-    private val audioManager: AudioManager by lazy {
-        Objects.requireNonNull(
-            getSystemService(
-                AudioManager::class.java
             )!!
         )
     }
@@ -130,7 +123,7 @@ class Service : AccessibilityService() {
 
                 Log.i(TAG, "onAttachedToWindow")
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && windowManager.isCrossWindowBlurEnabled && isHardwareAccelerated) {
+                if (windowManager.isCrossWindowBlurEnabled && isHardwareAccelerated) {
                     background =
                         Reflect.on(rootSurfaceControl).call("createBackgroundBlurDrawable").apply {
                             call("setBlurRadius", 200)
@@ -157,7 +150,7 @@ class Service : AccessibilityService() {
             override fun Content() {
                 var volumeChanged by remember { mutableIntStateOf(0) }
 
-                DisposableEffect(audioManager) {
+                DisposableEffect(manager.audioManager) {
                     val receiver = object : BroadcastReceiver() {
                         override fun onReceive(context: Context?, intent: Intent?) {
                             volumeChanged++
@@ -184,9 +177,13 @@ class Service : AccessibilityService() {
                                 )
                                 .padding(20.dp, 16.dp)
                         ) {
-                            AppVolumeList(manager.apps.values, onChange = { startIdleTimer() }) {
+                            AppVolumeList(
+                                manager.apps.values,
+                                showAll = false,
+                                onChange = { startIdleTimer() }) {
                                 item(AudioManager.STREAM_MUSIC) {
-                                    StreamVolumeSlider(AudioManager.STREAM_MUSIC,
+                                    StreamVolumeSlider(
+                                        AudioManager.STREAM_MUSIC,
                                         volumeChanged,
                                         MaterialMusicNote,
                                         "Music",
@@ -194,7 +191,8 @@ class Service : AccessibilityService() {
                                 }
 
                                 item(AudioManager.STREAM_NOTIFICATION) {
-                                    StreamVolumeSlider(AudioManager.STREAM_NOTIFICATION,
+                                    StreamVolumeSlider(
+                                        AudioManager.STREAM_NOTIFICATION,
                                         volumeChanged,
                                         MaterialNotifications,
                                         "Notifications",
@@ -308,7 +306,7 @@ class Service : AccessibilityService() {
         accessibilityButtonController.registerAccessibilityButtonCallback(object :
             AccessibilityButtonCallback() {
             override fun onClicked(controller: AccessibilityButtonController?) {
-                if (manager.shizukuPermission == true) {
+                if (manager.shizukuPermission) {
                     showView()
                 }
             }
@@ -326,7 +324,7 @@ class Service : AccessibilityService() {
     override fun onKeyEvent(event: KeyEvent): Boolean {
         Log.i(TAG, "onKeyEvent ${event.action} ${event.keyCode}")
 
-        if (manager.shizukuPermission != true) {
+        if (!manager.shizukuPermission) {
             return false
         }
 
@@ -334,7 +332,7 @@ class Service : AccessibilityService() {
             KeyEvent.KEYCODE_VOLUME_UP -> {
                 if (event.action == KeyEvent.ACTION_DOWN) {
                     if (view != null) {
-                        audioManager.adjustSuggestedStreamVolume(
+                        manager.audioManager.adjustSuggestedStreamVolume(
                             AudioManager.ADJUST_RAISE, AudioManager.USE_DEFAULT_STREAM_TYPE, 0
                         )
                     }
@@ -346,7 +344,7 @@ class Service : AccessibilityService() {
             KeyEvent.KEYCODE_VOLUME_DOWN -> {
                 if (event.action == KeyEvent.ACTION_DOWN) {
                     if (view != null) {
-                        audioManager.adjustSuggestedStreamVolume(
+                        manager.audioManager.adjustSuggestedStreamVolume(
                             AudioManager.ADJUST_LOWER, AudioManager.USE_DEFAULT_STREAM_TYPE, 0
                         )
                     }
@@ -367,18 +365,18 @@ class Service : AccessibilityService() {
         name: String,
         onChange: (() -> Unit)? = null
     ) {
-        var volume by remember { mutableIntStateOf(audioManager.getStreamVolume(streamType)) }
+        var volume by remember { mutableIntStateOf(manager.audioManager.getStreamVolume(streamType)) }
 
         LaunchedEffect(triggerChange) {
-            volume = audioManager.getStreamVolume(streamType)
+            volume = manager.audioManager.getStreamVolume(streamType)
         }
 
         TrackSlider(
             cornerRadius = 20.dp,
             value = volume.toFloat(),
-            valueRange = 0f..audioManager.getStreamMaxVolume(streamType).toFloat(),
+            valueRange = 0f..manager.audioManager.getStreamMaxVolume(streamType).toFloat(),
             onValueChange = { value ->
-                audioManager.setStreamVolume(streamType, value.toInt(), 0)
+                manager.audioManager.setStreamVolume(streamType, value.toInt(), 0)
                 onChange?.invoke()
             },
         ) {

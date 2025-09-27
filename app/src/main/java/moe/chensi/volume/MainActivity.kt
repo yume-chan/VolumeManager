@@ -3,13 +3,14 @@
 package moe.chensi.volume
 
 import android.annotation.SuppressLint
-import android.companion.virtual.VirtualDeviceManager
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.ComponentName
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
-import android.os.UserHandle
 import android.provider.Settings
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -17,11 +18,22 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import moe.chensi.volume.ui.theme.VolumeManagerTheme
@@ -47,19 +60,21 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var application: MyApplication
 
+    @Suppress("SameParameterValue")
     @SuppressLint("MissingPermission")
     private fun grantSelfPermission(permission: String) {
-        var state = packageManager.checkPermission(permission, packageName)
+        var state = this@MainActivity.checkSelfPermission(permission)
         if (state == PackageManager.PERMISSION_GRANTED) {
             return
         }
 
+        // Grant permission via `PackageManager` doesn't work on some Samsung devices
         val process = Reflect.onClass(Shizuku::class.java).call(
             "newProcess", arrayOf("pm", "grant", packageName, permission), null, null
         ).get<ShizukuRemoteProcess>()
         process.waitFor()
 
-        state = packageManager.checkPermission(permission, packageName)
+        state = this@MainActivity.checkSelfPermission(permission)
         if (state == PackageManager.PERMISSION_GRANTED) {
             return
         }
@@ -105,10 +120,29 @@ class MainActivity : ComponentActivity() {
         val manager = Manager(this@MainActivity, application.dataStore)
 
         setContent {
+            var showAll by remember { mutableStateOf(false) }
+
             VolumeManagerTheme {
                 Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    topBar = { TopAppBar(title = { Text("Volume Manager") }) }) { innerPadding ->
+                    modifier = Modifier.fillMaxSize(), topBar = {
+                        TopAppBar(title = { Text("Volume Manager") }, actions = {
+                            if (manager.shizukuPermission) {
+                                TooltipBox(
+                                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                                    tooltip = { PlainTooltip { Text(if (showAll) "Hide inactive or hidden apps" else "Show all apps") } },
+                                    state = rememberTooltipState()
+                                ) {
+                                    IconButton(
+                                        onClick = { showAll = !showAll }) {
+                                        Icon(
+                                            if (showAll) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                            contentDescription = if (showAll) "Hide inactive or hidden apps" else "Show all apps"
+                                        )
+                                    }
+                                }
+                            }
+                        })
+                    }) { innerPadding ->
                     Column(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier
@@ -118,7 +152,7 @@ class MainActivity : ComponentActivity() {
                         if (manager.shizukuReady) {
                             if (manager.shizukuPermission) {
                                 AccessibilityService()
-                                AppVolumeList(manager.apps.values)
+                                AppVolumeList(manager.apps.values, showAll)
                             } else {
                                 Column(
                                     modifier = Modifier.fillMaxSize(),
@@ -159,30 +193,61 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    data class ErrorInfo(val message: String, val stack: String)
+
     @Composable
     fun AccessibilityService() {
         var permissionGranted by remember { mutableStateOf(false) }
         var serviceEnabled by remember { mutableStateOf(false) }
+        var errorInfo by remember { mutableStateOf<ErrorInfo?>(null) }
 
         LaunchedEffect(0) {
             try {
                 grantSelfPermission(android.Manifest.permission.WRITE_SECURE_SETTINGS)
                 permissionGranted = true
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to grant permission", e)
+                Log.e(TAG, "Can't add WRITE_SECURE_SETTINGS permission", e)
+                errorInfo = ErrorInfo(e.message!!, e.stackTraceToString())
+                return@LaunchedEffect
             }
 
             try {
-                enableAccessibilityService("$packageName/${Service::class.java.canonicalName}")
+                enableAccessibilityService(
+                    ComponentName(this@MainActivity, Service::class.java).flattenToString()
+                )
                 serviceEnabled = true
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to enable accessibility service", e)
+                Log.e(TAG, "Can't enable accessibility service", e)
             }
         }
 
+        errorInfo?.let { info ->
+            val context = LocalContext.current
+
+            AlertDialog(
+                onDismissRequest = { errorInfo = null },
+                title = { Text("Can't add permission") },
+                text = { Text(info.message) },
+                confirmButton = {
+                    Button(onClick = { errorInfo = null }) {
+                        Text("OK")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        val clipboard = context.getSystemService(ClipboardManager::class.java)
+                        val clip = ClipData.newPlainText("error_message", info.stack)
+                        clipboard.setPrimaryClip(clip)
+                        Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+                    }) {
+                        Text("Copy full message")
+                    }
+                })
+        }
+
         Column {
-            Text(text = "Permission granted: $permissionGranted")
-            Text(text = "Service enabled: $serviceEnabled")
+            Text(text = "Permission granted: ${if (permissionGranted) "Yes" else "No"}")
+            Text(text = "Service enabled: ${if (serviceEnabled) "Yes" else "No"}")
         }
     }
 }
