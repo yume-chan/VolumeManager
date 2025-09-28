@@ -117,7 +117,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         application = super.getApplication() as MyApplication
-        val manager = Manager(this@MainActivity, application.dataStore)
+        val manager = application.manager
 
         setContent {
             var showAll by remember { mutableStateOf(false) }

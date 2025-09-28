@@ -23,6 +23,7 @@ import android.view.View
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -56,12 +57,13 @@ import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import org.joor.Reflect
-import rikka.shizuku.ShizukuProvider
 import java.util.Objects
 
 @SuppressLint("AccessibilityPolicy")
 class Service : AccessibilityService() {
     companion object {
+        const val ACTION_SHOW_VIEW = "moe.chensi.volume.ACTION_SHOW_VIEW"
+
         private const val TAG = "VolumeManager.Service"
 
         private const val ANIMATION_DURATION = 300L
@@ -297,11 +299,20 @@ class Service : AccessibilityService() {
         currentAnimator = animator
     }
 
+    private val broadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            Log.i(TAG, "onReceive ${intent.action}")
+            if (intent.action == ACTION_SHOW_VIEW) {
+                showView()
+            }
+        }
+    }
+
     override fun onServiceConnected() {
         Log.i(TAG, "onServiceConnected")
 
-        ShizukuProvider.enableMultiProcessSupport(false)
-        manager = Manager(this, (application as MyApplication).dataStore)
+        val application = super.getApplication() as MyApplication
+        manager = application.manager
 
         accessibilityButtonController.registerAccessibilityButtonCallback(object :
             AccessibilityButtonCallback() {
@@ -312,6 +323,8 @@ class Service : AccessibilityService() {
             }
         })
 
+        registerReceiver(broadcastReceiver, IntentFilter(ACTION_SHOW_VIEW), RECEIVER_NOT_EXPORTED)
+
         Log.i(TAG, "onServiceConnected done ${serviceInfo.capabilities.toString(2)}")
     }
 
@@ -319,10 +332,25 @@ class Service : AccessibilityService() {
     }
 
     override fun onInterrupt() {
+        Log.i(TAG, "onInterrupt")
+
+        Toast.makeText(this, "Accessibility service died!", Toast.LENGTH_SHORT).show()
+
+        unregisterReceiver(broadcastReceiver)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        Log.i(TAG, "onDestroy")
+
+        Toast.makeText(this, "Accessibility service died!", Toast.LENGTH_SHORT).show()
+
+        unregisterReceiver(broadcastReceiver)
     }
 
     override fun onKeyEvent(event: KeyEvent): Boolean {
-        Log.i(TAG, "onKeyEvent ${event.action} ${event.keyCode}")
+        Log.i(TAG, "onKeyEvent action = ${event.action}, key code = ${event.keyCode}, shizuku permission = ${manager.shizukuPermission}")
 
         if (!manager.shizukuPermission) {
             return false

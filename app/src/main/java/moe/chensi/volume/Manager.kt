@@ -27,6 +27,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.joor.Reflect
 import rikka.shizuku.Shizuku
+import rikka.shizuku.ShizukuProvider
 import java.lang.reflect.Method
 
 @SuppressLint("PrivateApi")
@@ -55,7 +56,7 @@ class Manager(context: Context, private val dataStore: DataStore<Preferences>) {
         Reflect.onClass(AudioManager::class.java).call("getService").get<Any>()
             .apply { ToggleableBinderProxy.wrap(this) }
     }
-    private val activityManager = context.getSystemService(ActivityManager::class.java)!!.apply {
+    val activityManager = context.getSystemService(ActivityManager::class.java)!!.apply {
         Reflect.onClass(ActivityManager::class.java).call("getService").get<Any>()
             .apply { ToggleableBinderProxy.wrap(this) }
     }
@@ -95,6 +96,8 @@ class Manager(context: Context, private val dataStore: DataStore<Preferences>) {
                 start()
             }
         }
+
+        ShizukuProvider.requestBinderForNonProviderProcess(context)
     }
 
     data class Player(val config: AudioPlaybackConfiguration, val player: Any)
