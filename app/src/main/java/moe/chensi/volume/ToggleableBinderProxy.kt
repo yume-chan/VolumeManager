@@ -79,11 +79,7 @@ class ToggleableBinderProxy(private val base: IBinder) : IBinder {
     override fun transact(
         code: Int, data: Parcel, reply: Parcel?, flags: Int
     ): Boolean {
-        return if (enabled) {
-            shizukuWrapper
-        } else {
-            base
-        }.transact(code, data, reply, flags)
+        return (if (enabled) shizukuWrapper else base).transact(code, data, reply, flags)
     }
 
     override fun linkToDeath(recipient: IBinder.DeathRecipient, flags: Int) {

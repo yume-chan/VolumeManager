@@ -27,8 +27,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.joor.Reflect
+import org.joor.ReflectException
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuProvider
+import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 
 @SuppressLint("PrivateApi")
@@ -43,6 +45,7 @@ class Manager(context: Context, private val dataStore: DataStore<Preferences>) {
                 "setVolume", Float::class.javaPrimitiveType
             )
 
+        private const val TAG = "Manager"
     }
 
     private var _shizukuReady by mutableStateOf(false)
@@ -168,9 +171,7 @@ class Manager(context: Context, private val dataStore: DataStore<Preferences>) {
                 val appInfo = Reflect.on(packageManager)
                     .call("getApplicationInfoAsUser", packageName, 0, user).get<ApplicationInfo>()
 
-                Log.d(
-                    "VolumeManager", "Found app info for: userId: $user, packageName: $packageName"
-                )
+                Log.d(TAG, "Found app info. userId: $user, packageName: $packageName")
 
                 return App(
                     packageName,
@@ -179,12 +180,17 @@ class Manager(context: Context, private val dataStore: DataStore<Preferences>) {
                         ?: packageManager.defaultActivityIcon,
                     dataStore
                 )
-            } catch (_: PackageManager.NameNotFoundException) {
+            } catch (e: Exception) {
+                if (((e as? ReflectException)?.cause as? InvocationTargetException)?.cause is PackageManager.NameNotFoundException) {
+                    continue
+                }
+
+                Log.i(TAG, "Failed to get app info. user: $user, packageName: $packageName", e)
                 continue
             }
         }
 
-        Log.d("VolumeManager", "Can't find app info for: packageName: $packageName")
+        Log.d("VolumeManager", "Can't find app info. packageName: $packageName")
         return App(
             packageName, packageName, packageManager.defaultActivityIcon, dataStore
         )
