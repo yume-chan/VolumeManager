@@ -174,14 +174,31 @@ fun AppVolumeList(
     onChange: (() -> Unit)? = null,
     content: (LazyListScope.() -> Unit)? = null
 ) {
-    val activeVisibleApps = apps.filter { it.players.isNotEmpty() && !it.hidden }
-    val inactiveVisibleApps = apps.filter { it.players.isEmpty() && !it.hidden }
-    val hiddenApps = if (showAll) apps.filter { it.hidden } else emptyList()
+    val (visibleActiveApps, visibleInactiveApps, hiddenApps) = if (showAll) {
+        apps.fold(
+            Triple(
+                mutableListOf<Manager.App>(),
+                mutableListOf<Manager.App>(),
+                mutableListOf<Manager.App>()
+            )
+        ) { acc, app ->
+            (if (app.hidden) acc.third else if (app.players.isNotEmpty()) acc.first else acc.second).add(
+                app
+            )
+            acc
+        }
+    } else {
+        Triple(
+            apps.filter { app -> !app.hidden && app.players.isNotEmpty() },
+            emptyList<Manager.App>(),
+            emptyList<Manager.App>()
+        )
+    }
 
     LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         content?.invoke(this)
 
-        if (activeVisibleApps.isNotEmpty()) {
+        if (visibleActiveApps.isNotEmpty()) {
             if (showAll) {
                 item {
                     Text(
@@ -193,41 +210,39 @@ fun AppVolumeList(
             }
 
             items(
-                items = activeVisibleApps.sortedBy { it.name },
+                items = visibleActiveApps.sortedBy { it.name },
                 key = { app -> app.packageName }) { app ->
                 AppVolumeSlider(app, showAll, onChange)
             }
         }
 
-        if (showAll) {
-            if (inactiveVisibleApps.isNotEmpty()) {
-                item {
-                    Text(
-                        text = "Inactive",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp)
-                    )
-                }
-                items(
-                    items = inactiveVisibleApps.sortedBy { it.name },
-                    key = { app -> app.packageName }) { app ->
-                    AppVolumeSlider(app, true, onChange)
-                }
+        if (visibleInactiveApps.isNotEmpty()) {
+            item {
+                Text(
+                    text = "Inactive",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp)
+                )
             }
+            items(
+                items = visibleInactiveApps.sortedBy { it.name },
+                key = { app -> app.packageName }) { app ->
+                AppVolumeSlider(app, true, onChange)
+            }
+        }
 
-            if (hiddenApps.isNotEmpty()) {
-                item {
-                    Text(
-                        text = "Hidden",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp)
-                    )
-                }
-                items(
-                    items = hiddenApps.sortedBy { it.name },
-                    key = { app -> app.packageName }) { app ->
-                    AppVolumeSlider(app, true, onChange)
-                }
+        if (hiddenApps.isNotEmpty()) {
+            item {
+                Text(
+                    text = "Hidden",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp)
+                )
+            }
+            items(
+                items = hiddenApps.sortedBy { it.name },
+                key = { app -> app.packageName }) { app ->
+                AppVolumeSlider(app, true, onChange)
             }
         }
     }
