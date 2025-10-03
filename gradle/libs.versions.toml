@@ -6,14 +6,18 @@ joor = "0.9.15"
 kotlin = "2.2.20"
 coreKtx = "1.17.0"
 junit = "4.13.2"
-junitVersion = "1.1.5"
+junitVersion = "1.3.0"
 espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.9.4"
 activityCompose = "1.11.0"
-composeBom = "2024.04.01"
+composeBom = "2025.09.01"
 shizuku = "13.1.5"
 androidaop = "2.7.2"
 appcompact = "1.7.1"
+uiautomator = "2.3.0"
+benchmarkMacroJunit4 = "1.4.1"
+baselineprofile = "1.4.1"
+profileinstaller = "1.4.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -44,6 +48,9 @@ androidaop-core = { group = "io.github.flyjingfish", name = "androidaop-core", v
 androidaop-apt = { group = "io.github.flyjingfish", name = "androidaop-apt", version.ref = "androidaop" }
 
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompact" }
+androidx-uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "uiautomator" }
+androidx-benchmark-macro-junit4 = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "benchmarkMacroJunit4" }
+androidx-profileinstaller = { group = "androidx.profileinstaller", name = "profileinstaller", version.ref = "profileinstaller" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -51,4 +58,6 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 
 androidaop = { id = "io.github.flyjingfish.androidaop", version.ref = "androidaop" }
+android-test = { id = "com.android.test", version.ref = "agp" }
+baselineprofile = { id = "androidx.baselineprofile", version.ref = "baselineprofile" }
 

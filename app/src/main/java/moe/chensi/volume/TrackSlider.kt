@@ -24,6 +24,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
@@ -130,7 +131,8 @@ fun TrackSlider(
         }
 
         Box(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
                 .clip(GenericShape { size, _ ->
                     addRoundRect(
                         RoundRect(
@@ -186,7 +188,9 @@ fun AppVolumeSlider(
         if (menuVisible) {
             Box {
                 TooltipBox(
-                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                    positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                        TooltipAnchorPosition.Below, 12.dp
+                    ),
                     tooltip = { PlainTooltip { Text(if (app.hidden) "Unhide app" else "Hide app") } },
                     state = rememberTooltipState()
                 ) {

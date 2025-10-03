@@ -21,4 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Volume Manager"
 include(":app")
- 
+include(":baselineprofile")

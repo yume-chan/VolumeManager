@@ -30,6 +30,7 @@ import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.TopAppBar
@@ -128,7 +129,10 @@ class MainActivity : ComponentActivity() {
                         TopAppBar(title = { Text("Volume Manager") }, actions = {
                             if (manager.shizukuPermission) {
                                 TooltipBox(
-                                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                                    positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                        TooltipAnchorPosition.Below,
+                                        12.dp
+                                    ),
                                     tooltip = { PlainTooltip { Text(if (showAll) "Hide inactive or hidden apps" else "Show all apps") } },
                                     state = rememberTooltipState()
                                 ) {

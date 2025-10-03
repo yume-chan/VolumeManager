@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.baselineprofile)
 
     id("com.google.devtools.ksp")
     id("android.aop")
@@ -37,20 +38,21 @@ androidAopConfig {
 android {
     namespace = "moe.chensi.volume"
     compileSdk = 36
+    ndkVersion = "29.0.14033849"
 
     defaultConfig {
         applicationId = "moe.chensi.volume"
         minSdk = 33
         targetSdk = 35
-        versionCode = 9
-        versionName = "0.3-beta.5"
+        versionCode = 10
+        versionName = "0.3-beta.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -97,6 +99,8 @@ dependencies {
 
     implementation(libs.androidaop.core)
     implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.profileinstaller)
+    "baselineProfile"(project(":baselineprofile"))
     ksp(libs.androidaop.apt)
 
     testImplementation(libs.junit)
