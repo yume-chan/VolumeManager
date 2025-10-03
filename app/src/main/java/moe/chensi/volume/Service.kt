@@ -1,7 +1,5 @@
 package moe.chensi.volume
 
-import MaterialMusicNote
-import MaterialNotifications
 import android.accessibilityservice.AccessibilityButtonController
 import android.accessibilityservice.AccessibilityButtonController.AccessibilityButtonCallback
 import android.accessibilityservice.AccessibilityService
@@ -24,15 +22,17 @@ import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.Toast
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -46,7 +46,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -56,6 +55,7 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import moe.chensi.volume.ui.theme.VolumeManagerTheme
 import org.joor.Reflect
 import java.util.Objects
 
@@ -167,7 +167,7 @@ class Service : AccessibilityService() {
                     }
                 }
 
-                return MaterialTheme {
+                return VolumeManagerTheme {
                     Surface(
                         color = Color.Transparent,
                         contentColor = Color.White,
@@ -187,7 +187,7 @@ class Service : AccessibilityService() {
                                     StreamVolumeSlider(
                                         AudioManager.STREAM_MUSIC,
                                         volumeChanged,
-                                        MaterialMusicNote,
+                                        Icons.Default.MusicNote,
                                         "Music",
                                         onChange = { startIdleTimer() })
                                 }
@@ -196,7 +196,7 @@ class Service : AccessibilityService() {
                                     StreamVolumeSlider(
                                         AudioManager.STREAM_NOTIFICATION,
                                         volumeChanged,
-                                        MaterialNotifications,
+                                        Icons.Default.Notifications,
                                         "Notifications",
                                         onChange = { startIdleTimer() })
                                 }
@@ -413,14 +413,13 @@ class Service : AccessibilityService() {
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(16.dp, 8.dp)
             ) {
-                Image(
+                Icon(
                     imageVector = icon,
                     contentDescription = name,
-                    modifier = Modifier.width(32.dp),
-                    contentScale = ContentScale.FillWidth
+                    modifier = Modifier.size(32.dp),
                 )
 
-                Text(text = name, color = Color.White)
+                Text(text = name)
             }
         }
     }

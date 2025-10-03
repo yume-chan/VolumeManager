@@ -13,12 +13,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
@@ -26,10 +28,12 @@ import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.RoundRect
@@ -40,6 +44,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
@@ -50,14 +55,21 @@ fun TrackSlider(
     onValueChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    trackColor: Color = Color.LightGray,
-    fillColor: Color = Color.Blue,
+    trackColor: Color = MaterialTheme.colorScheme.primaryContainer,
+    onTrackColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
+    fillColor: Color = MaterialTheme.colorScheme.primary,
+    onFillColor: Color = MaterialTheme.colorScheme.onPrimary,
     cornerRadius: Dp = 8.dp,
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     content: @Composable BoxScope.() -> Unit = {}
 ) {
     val coercedValue = value.coerceIn(valueRange.start, valueRange.endInclusive)
     val latestValue by rememberUpdatedState(coercedValue)
+    val density = LocalDensity.current
+    val cornerRadiusPx = with(density) { cornerRadius.toPx() }
+
+    val fillWidthPercentage =
+        (coercedValue - valueRange.start) / (valueRange.endInclusive - valueRange.start)
 
     Box(
         modifier = modifier
@@ -90,27 +102,50 @@ fun TrackSlider(
                 color = trackColor,
                 topLeft = Offset(0f, 0f),
                 size = size,
-                cornerRadius = CornerRadius(cornerRadius.toPx())
+                cornerRadius = CornerRadius(cornerRadiusPx)
             )
 
             clipPath(Path().apply {
                 addRoundRect(
                     RoundRect(
-                        0f, 0f, size.width, size.height, CornerRadius(cornerRadius.toPx())
+                        0f, 0f, size.width, size.height, CornerRadius(cornerRadiusPx)
                     )
                 )
             }) {
                 // Draw fill
                 drawRoundRect(
                     color = fillColor, topLeft = Offset(0f, 0f), size = Size(
-                        (coercedValue - valueRange.start) / (valueRange.endInclusive - valueRange.start) * size.width,
-                        size.height
-                    ), cornerRadius = CornerRadius(2.dp.toPx())
+                        fillWidthPercentage * size.width, size.height
+                    ), cornerRadius = CornerRadius(with(density) { 2.dp.toPx() })
                 )
             }
         }
-        Box(modifier = Modifier.align(Alignment.CenterStart)) {
-            content()
+
+        Box(
+            modifier = Modifier.align(Alignment.CenterStart)
+        ) {
+            CompositionLocalProvider(LocalContentColor provides onTrackColor) {
+                content()
+            }
+        }
+
+        Box(
+            modifier = Modifier.fillMaxWidth()
+                .clip(GenericShape { size, _ ->
+                    addRoundRect(
+                        RoundRect(
+                            0f,
+                            0f,
+                            fillWidthPercentage * size.width,
+                            size.height,
+                            cornerRadius = CornerRadius(cornerRadiusPx)
+                        )
+                    )
+                })
+        ) {
+            CompositionLocalProvider(LocalContentColor provides onFillColor) {
+                content()
+            }
         }
     }
 }
@@ -144,7 +179,7 @@ fun AppVolumeSlider(
                     contentScale = ContentScale.FillWidth
                 )
 
-                Text(text = app.name, color = Color.White)
+                Text(text = app.name)
             }
         }
 
