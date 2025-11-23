@@ -125,14 +125,6 @@ class Service : AccessibilityService() {
 
                 Log.i(TAG, "onAttachedToWindow")
 
-                if (windowManager.isCrossWindowBlurEnabled && isHardwareAccelerated) {
-                    background =
-                        Reflect.on(rootSurfaceControl).call("createBackgroundBlurDrawable").apply {
-                            call("setBlurRadius", 200)
-                            call("setCornerRadius", 40f)
-                        }.get()
-                }
-
                 startIdleTimer()
             }
 
