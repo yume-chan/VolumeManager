@@ -56,6 +56,7 @@ import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import moe.chensi.volume.ui.theme.VolumeManagerTheme
+import moe.chensi.volume.volumemanager.PreferenceHelper
 import org.joor.Reflect
 import java.util.Objects
 
@@ -364,7 +365,10 @@ class Service : AccessibilityService() {
                             AudioManager.ADJUST_RAISE, AudioManager.USE_DEFAULT_STREAM_TYPE, 0
                         )
                     }
-                    showView()
+                    // Only show the overlay for physical volume buttons if the user allows it.
+                                        if (PreferenceHelper.isVolumeOverlayEnabled(this)) {
+                                                showView()
+                                            }
                 }
                 return true
             }
@@ -376,7 +380,10 @@ class Service : AccessibilityService() {
                             AudioManager.ADJUST_LOWER, AudioManager.USE_DEFAULT_STREAM_TYPE, 0
                         )
                     }
-                    showView()
+                    // Only show the overlay for physical volume buttons if the user allows it.
+                                        if (PreferenceHelper.isVolumeOverlayEnabled(this)) {
+                                                showView()
+                                            }
                 }
                 return true
             }

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    >
+
+    <androidx.preference.SwitchPreferenceCompat
+        android:key="pref_show_volume_overlay"
+        android:title="@string/pref_show_volume_overlay_title"
+        android:summary="@string/pref_show_volume_overlay_summary"
+        android:defaultValue="true" />
+</PreferenceScreen>
