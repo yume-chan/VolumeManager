@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "moe.chensi.baselineprofile"
+    namespace = "better.volume.baselineprofile"
     compileSdk = 36
 
     compileOptions {

@@ -1,10 +1,5 @@
 # Volume Manager
 
-[<img src="https://img.shields.io/f-droid/v/moe.chensi.volume?baseUrl=https://apt.izzysoft.de/fdroid&label=IzzyOnDroid" alt="IzzyOnDroid">](https://apt.izzysoft.de/fdroid/index/apk/moe.chensi.volume)
-[<img src="https://shields.rbtlog.dev/simple/moe.chensi.volume" alt="RB shield">](https://shields.rbtlog.dev/moe.chensi.volume)
-
-**Work in progress**
-
 Control each app's volume independently. [Shizuku](https://shizuku.rikka.app/) is used to access privileged APIs.
 
 Requires Android 13.
@@ -12,10 +7,7 @@ Requires Android 13.
 ![Screenshot](screenshot.png)
 
 ## Download
-
-Latest development version can be downloaded from [action artifacts](https://github.com/yume-chan/VolumeManager/actions).
-
-Some hand-picked versions can also be downloaded from [releases](https://github.com/yume-chan/VolumeManager/releases).
+   //TODOASDF make it so that a build is kicked off in a github action on merge that creates a release.
 
 ## Usage
 

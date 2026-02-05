@@ -17,7 +17,7 @@ androidAopConfig {
     debug = true
 
     // include does not set all scans by default. After setting, only the code of the set package name will be scanned.
-//    include("moe.chensi.volume")
+//    include("better.volume.slider")
 
     // exclude is the package excluded during scanning
     // Can exclude kotlin related and improve speed
@@ -37,12 +37,12 @@ androidAopConfig {
 }
 
 android {
-    namespace = "moe.chensi.volume"
+    namespace = "better.volume.slider"
     compileSdk = 36
     ndkVersion = "29.0.14033849"
 
     defaultConfig {
-        applicationId = "moe.chensi.volume"
+        applicationId = "better.volume.slider"
         minSdk = 33
         targetSdk = 35
         versionCode = 11

@@ -1,4 +1,4 @@
-package moe.chensi.baselineprofile
+package better.volume.baselineprofile
 
 import androidx.benchmark.macro.BaselineProfileMode
 import androidx.benchmark.macro.CompilationMode
