@@ -56,6 +56,7 @@ import androidx.compose.ui.window.DialogProperties
 import moe.chensi.volume.BuildConfig
 import moe.chensi.volume.R
 import moe.chensi.volume.compose.AppVolumeList
+import moe.chensi.volume.compose.CrashReportDialog
 import moe.chensi.volume.ui.theme.VolumeManagerTheme
 import org.joor.Reflect
 import rikka.shizuku.Shizuku
@@ -222,6 +223,47 @@ class MainActivity : ComponentActivity() {
                             .padding(16.dp)
                     ) {
                         when (manager.shizukuStatus) {
+                            Manager.ShizukuStatus.Uninstalled -> {
+                                val context = LocalContext.current
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(
+                                        16.dp, Alignment.CenterVertically
+                                    )
+                                ) {
+                                    Text("Shizuku not installed")
+                                    Text(
+                                        textAlign = TextAlign.Center,
+                                        text = "Please install Shizuku from the Play Store or GitHub"
+                                    )
+                                    Button(
+                                        onClick = {
+                                            val intent = Intent(
+                                                Intent.ACTION_VIEW,
+                                                Uri.parse("https://play.google.com/store/apps/details?id=${Manager.SHIZUKU_PACKAGE_NAME}")
+                                            )
+                                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            context.startActivity(intent)
+                                        }
+                                    ) {
+                                        Text("Get Shizuku on Play Store")
+                                    }
+                                    Button(
+                                        onClick = {
+                                            val intent = Intent(
+                                                Intent.ACTION_VIEW,
+                                                Uri.parse("https://github.com/RikkaApps/Shizuku/releases")
+                                            )
+                                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            context.startActivity(intent)
+                                        }
+                                    ) {
+                                        Text("Get Shizuku on GitHub")
+                                    }
+                                }
+                            }
+
                             Manager.ShizukuStatus.Disconnected -> Column(
                                 modifier = Modifier.fillMaxSize(),
                                 horizontalAlignment = Alignment.CenterHorizontally,

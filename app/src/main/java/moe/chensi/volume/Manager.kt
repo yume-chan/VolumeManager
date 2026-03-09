@@ -22,8 +22,12 @@ import rikka.shizuku.ShizukuProvider
 
 @SuppressLint("PrivateApi")
 class Manager(context: Context, dataStore: DataStore<Preferences>) {
+    companion object {
+        const val SHIZUKU_PACKAGE_NAME = "moe.shizuku.privileged.api"
+    }
+
     enum class ShizukuStatus {
-        Disconnected, PermissionDenied, Connected
+        Uninstalled, Disconnected, PermissionDenied, Connected
     }
 
     private var _shizukuStatus by mutableStateOf(ShizukuStatus.Disconnected)
@@ -108,6 +112,19 @@ class Manager(context: Context, dataStore: DataStore<Preferences>) {
     }
 
     init {
+        val isShizukuInstalled = try {
+            context.packageManager.getPackageInfo(SHIZUKU_PACKAGE_NAME, 0)
+            true
+        } catch (e: PackageManager.NameNotFoundException) {
+            false
+        }
+
+        if (!isShizukuInstalled) {
+            _shizukuStatus = ShizukuStatus.Uninstalled
+        } else if (!Shizuku.pingBinder()) {
+            _shizukuStatus = ShizukuStatus.Disconnected
+        }
+
         Shizuku.addBinderReceivedListenerSticky {
             if (Shizuku.isPreV11()) {
                 return@addBinderReceivedListenerSticky

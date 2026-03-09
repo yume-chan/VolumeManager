@@ -1,4 +1,4 @@
-package moe.chensi.volume
+package moe.chensi.volume.compose
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import moe.chensi.volume.CrashHandler
 
 @Composable
 fun CrashReportDialog(
