@@ -22,5 +22,7 @@ class MyApplication : Application() {
         Log.i("Application", "process name = $processName")
         ShizukuProvider.enableMultiProcessSupport(!processName.contains(":"))
         HiddenApiBypass.addHiddenApiExemptions("")
+        
+        CrashHandler.ensureInitialized(this)
     }
 }

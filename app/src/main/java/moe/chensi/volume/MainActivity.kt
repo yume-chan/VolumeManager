@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
@@ -48,8 +49,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
+import moe.chensi.volume.BuildConfig
+import moe.chensi.volume.R
 import moe.chensi.volume.compose.AppVolumeList
 import moe.chensi.volume.ui.theme.VolumeManagerTheme
 import org.joor.Reflect
@@ -132,10 +137,43 @@ class MainActivity : ComponentActivity() {
         application = super.getApplication() as MyApplication
         val manager = application.manager
 
+        CrashHandler.ensureInitialized(this)
+        val showCrashReport = CrashHandler.hasCrashReport() && CrashHandler.readCrashReport() != null
+
         checkBatteryOptimization()
 
         setContent {
             var showAll by remember { mutableStateOf(false) }
+            var crashReport by remember { mutableStateOf<String?>(null) }
+
+            LaunchedEffect(showCrashReport) {
+                if (showCrashReport) {
+                    crashReport = CrashHandler.readCrashReport()
+                }
+            }
+
+            if (crashReport != null) {
+                crashReport?.let { report ->
+                    androidx.compose.ui.window.Dialog(
+                        onDismissRequest = { },
+                        properties = DialogProperties(
+                            dismissOnBackPress = false,
+                            dismissOnClickOutside = false,
+                            usePlatformDefaultWidth = false
+                        )
+                    ) {
+                        VolumeManagerTheme {
+                            CrashReportDialog(
+                                crashReport = report,
+                                onDismiss = {
+                                    CrashHandler.clearCrashReport()
+                                    crashReport = null
+                                }
+                            )
+                        }
+                    }
+                }
+            }
 
             VolumeManagerTheme {
                 Scaffold(
@@ -154,6 +192,23 @@ class MainActivity : ComponentActivity() {
                                         Icon(
                                             if (showAll) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                                             contentDescription = if (showAll) "Hide inactive or hidden apps" else "Show all apps"
+                                        )
+                                    }
+                                }
+                            }
+                            
+                            if (BuildConfig.DEBUG) {
+                                TooltipBox(
+                                    positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                        TooltipAnchorPosition.Below, 12.dp
+                                    ),
+                                    tooltip = { PlainTooltip { Text("Trigger a crash for testing") } },
+                                    state = rememberTooltipState()
+                                ) {
+                                    IconButton(onClick = { throw RuntimeException("Test crash triggered from UI") }) {
+                                        Icon(
+                                            Icons.Default.BugReport,
+                                            contentDescription = stringResource(R.string.test_crash)
                                         )
                                     }
                                 }
