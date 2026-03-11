@@ -57,6 +57,7 @@ import moe.chensi.volume.BuildConfig
 import moe.chensi.volume.R
 import moe.chensi.volume.compose.AppVolumeList
 import moe.chensi.volume.compose.CrashReportDialog
+import moe.chensi.volume.compose.ToggleButton
 import moe.chensi.volume.ui.theme.VolumeManagerTheme
 import org.joor.Reflect
 import rikka.shizuku.Shizuku
@@ -181,23 +182,17 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(), topBar = {
                         TopAppBar(title = { Text("Volume Manager") }, actions = {
                             if (manager.shizukuStatus == Manager.ShizukuStatus.Connected) {
-                                TooltipBox(
-                                    positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                                        TooltipAnchorPosition.Below, 12.dp
-                                    ),
-                                    tooltip = { PlainTooltip { Text(if (showAll) "Hide inactive or hidden apps" else "Show all apps") } },
-                                    state = rememberTooltipState()
+                                ToggleButton(
+                                    checked = showAll,
+                                    checkedIcon = Icons.Default.Visibility,
+                                    checkedDescription = "Hide inactive or hidden apps",
+                                    uncheckedIcon = Icons.Default.VisibilityOff,
+                                    uncheckedDescription = "Show all apps"
                                 ) {
-                                    IconButton(
-                                        onClick = { showAll = !showAll }) {
-                                        Icon(
-                                            if (showAll) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                            contentDescription = if (showAll) "Hide inactive or hidden apps" else "Show all apps"
-                                        )
-                                    }
+                                    showAll = it
                                 }
                             }
-                            
+
                             if (BuildConfig.DEBUG) {
                                 TooltipBox(
                                     positionProvider = TooltipDefaults.rememberTooltipPositionProvider(

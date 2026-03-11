@@ -67,9 +67,9 @@ fun AppVolumeSlider(
             if (enableHide) {
                 ToggleButton(
                     checked = app.hidden,
-                    checkedIcon = Icons.Default.Visibility,
+                    checkedIcon = Icons.Default.VisibilityOff,
                     checkedDescription = "Unhide app",
-                    uncheckedIcon = Icons.Default.VisibilityOff,
+                    uncheckedIcon = Icons.Default.Visibility,
                     uncheckedDescription = "Hide app"
                 ) {
                     app.hidden = it
@@ -78,9 +78,9 @@ fun AppVolumeSlider(
 
             ToggleButton(
                 checked = app.disableVolumeButtons,
-                checkedIcon = Icons.AutoMirrored.Filled.VolumeUp,
+                checkedIcon = Icons.AutoMirrored.Default.VolumeOff,
                 checkedDescription = "Enable volume buttons",
-                uncheckedIcon = Icons.AutoMirrored.Filled.VolumeOff,
+                uncheckedIcon = Icons.AutoMirrored.Default.VolumeUp,
                 uncheckedDescription = "Disable volume buttons"
             ) {
                 app.disableVolumeButtons = it

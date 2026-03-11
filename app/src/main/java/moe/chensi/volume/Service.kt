@@ -422,6 +422,7 @@ class Service : AccessibilityService() {
             value = volume.toFloat(),
             valueRange = 0f..manager.audioManager.getStreamMaxVolume(streamType).toFloat(),
             onValueChange = { value ->
+                volume = value.toInt()
                 manager.audioManager.setStreamVolume(streamType, value.toInt(), 0)
                 onChange?.invoke()
             },
