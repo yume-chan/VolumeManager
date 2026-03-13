@@ -37,12 +37,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -57,7 +51,8 @@ import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import moe.chensi.volume.compose.AppVolumeList
-import moe.chensi.volume.compose.TrackSlider
+import moe.chensi.volume.compose.StreamVolumeSlider
+import moe.chensi.volume.compose.VolumeChangeObserver
 import moe.chensi.volume.system.ActivityTaskManagerProxy
 import moe.chensi.volume.ui.theme.VolumeManagerTheme
 import org.joor.Reflect
@@ -155,23 +150,6 @@ class Service : AccessibilityService() {
 
             @Composable
             override fun Content() {
-                var volumeChanged by remember { mutableIntStateOf(0) }
-
-                DisposableEffect(manager.audioManager) {
-                    val receiver = object : BroadcastReceiver() {
-                        override fun onReceive(context: Context?, intent: Intent?) {
-                            volumeChanged++
-                            startIdleTimer()
-                        }
-                    }
-
-                    registerReceiver(receiver, IntentFilter("android.media.VOLUME_CHANGED_ACTION"))
-
-                    onDispose {
-                        unregisterReceiver(receiver)
-                    }
-                }
-
                 return VolumeManagerTheme {
                     Surface(
                         color = Color.Transparent,
@@ -191,18 +169,18 @@ class Service : AccessibilityService() {
                                 item(AudioManager.STREAM_MUSIC) {
                                     StreamVolumeSlider(
                                         AudioManager.STREAM_MUSIC,
-                                        volumeChanged,
                                         Icons.Default.MusicNote,
                                         "Music",
+                                        manager.audioManager,
                                         onChange = { startIdleTimer() })
                                 }
 
                                 item(AudioManager.STREAM_NOTIFICATION) {
                                     StreamVolumeSlider(
                                         AudioManager.STREAM_NOTIFICATION,
-                                        volumeChanged,
                                         Icons.Default.Notifications,
                                         "Notifications",
+                                        manager.audioManager,
                                         onChange = { startIdleTimer() })
                                 }
                             }
@@ -240,9 +218,10 @@ class Service : AccessibilityService() {
         if (!viewVisible) {
             Log.i(TAG, "animate in")
             animateAlpha(layoutParams.alpha, 1f, ANIMATION_DURATION)
-            startIdleTimer()
             viewVisible = true
         }
+
+        startIdleTimer()
     }
 
     private fun hideView() {
@@ -384,6 +363,7 @@ class Service : AccessibilityService() {
                     manager.audioManager.adjustSuggestedStreamVolume(
                         AudioManager.ADJUST_RAISE, AudioManager.USE_DEFAULT_STREAM_TYPE, 0
                     )
+                    VolumeChangeObserver.notifyVolumeChanged()
                 }
                 showView()
                 return true
@@ -394,6 +374,7 @@ class Service : AccessibilityService() {
                     manager.audioManager.adjustSuggestedStreamVolume(
                         AudioManager.ADJUST_LOWER, AudioManager.USE_DEFAULT_STREAM_TYPE, 0
                     )
+                    VolumeChangeObserver.notifyVolumeChanged()
                 }
                 showView()
                 return true
@@ -401,45 +382,5 @@ class Service : AccessibilityService() {
         }
 
         return false
-    }
-
-    @Composable
-    fun StreamVolumeSlider(
-        streamType: Int,
-        triggerChange: Int,
-        icon: ImageVector,
-        name: String,
-        onChange: (() -> Unit)? = null
-    ) {
-        var volume by remember { mutableIntStateOf(manager.audioManager.getStreamVolume(streamType)) }
-
-        LaunchedEffect(triggerChange) {
-            volume = manager.audioManager.getStreamVolume(streamType)
-        }
-
-        TrackSlider(
-            cornerRadius = 20.dp,
-            value = volume.toFloat(),
-            valueRange = 0f..manager.audioManager.getStreamMaxVolume(streamType).toFloat(),
-            onValueChange = { value ->
-                volume = value.toInt()
-                manager.audioManager.setStreamVolume(streamType, value.toInt(), 0)
-                onChange?.invoke()
-            },
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(16.dp, 8.dp)
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = name,
-                    modifier = Modifier.size(32.dp),
-                )
-
-                Text(text = name)
-            }
-        }
     }
 }
