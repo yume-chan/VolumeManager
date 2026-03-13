@@ -59,6 +59,7 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import moe.chensi.volume.compose.AppVolumeList
 import moe.chensi.volume.compose.TrackSlider
 import moe.chensi.volume.system.ActivityTaskManagerProxy
+import moe.chensi.volume.system.AudioSystemProxy
 import moe.chensi.volume.ui.theme.VolumeManagerTheme
 import org.joor.Reflect
 import java.util.Objects
@@ -94,6 +95,46 @@ class Service : AccessibilityService() {
                 hideView()
             }
         }.start()
+    }
+
+    private var volumeRepeatTimer: CountDownTimer? = null
+
+    private fun startVolumeRepeat(direction: Int) {
+        volumeRepeatTimer?.cancel()
+
+        // Immediate adjustment on key press
+        if (view != null) {
+            adjustVolume(direction)
+        }
+
+        // First repeat after 500ms using a one-shot timer
+        volumeRepeatTimer = object : CountDownTimer(500, 500) {
+            override fun onTick(millisUntilFinished: Long) {}
+
+            override fun onFinish() {
+                adjustVolume(direction)
+                startIdleTimer()
+                // Continue with 100ms repeats
+                startContinuousRepeat(direction)
+            }
+        }.start()
+    }
+
+    private fun startContinuousRepeat(direction: Int) {
+        volumeRepeatTimer?.cancel()
+        volumeRepeatTimer = object : CountDownTimer(Long.MAX_VALUE, 100) {
+            override fun onTick(millisUntilFinished: Long) {
+                adjustVolume(direction)
+                startIdleTimer()
+            }
+
+            override fun onFinish() {}
+        }.start()
+    }
+
+    private fun stopVolumeRepeat() {
+        volumeRepeatTimer?.cancel()
+        volumeRepeatTimer = null
     }
 
     private var lifecycle: LifecycleRegistry? = null
@@ -354,11 +395,41 @@ class Service : AccessibilityService() {
 
     val activityTaskManager by lazy { ActivityTaskManagerProxy(this) }
 
-    override fun onKeyEvent(event: KeyEvent): Boolean {
-        if (event.action != KeyEvent.ACTION_DOWN) {
-            return false
+    private fun adjustVolume(direction: Int) {
+        // 1. Check active system streams in priority order: voice call, ring, notification
+        val activeStreamTypes = listOf(
+            AudioManager.STREAM_VOICE_CALL,
+            AudioManager.STREAM_RING,
+            AudioManager.STREAM_NOTIFICATION
+        )
+
+        for (streamType in activeStreamTypes) {
+            if (AudioSystemProxy.isStreamActive(streamType, 0)) {
+                manager.audioManager.adjustStreamVolume(streamType, direction, 4096)
+                return
+            }
         }
 
+        // 2. Check if foreground app is playing audio
+        val foregroundTask = activityTaskManager.getForegroundTask()
+        if (foregroundTask != null) {
+            val app = manager.apps[foregroundTask.app]
+            if (app != null && !app.hidden && app.isPlaying) {
+                val newVolume = (app.volume + direction * 0.1f).coerceIn(0f, 1f)
+
+                // If app volume is already at min/max, adjust system music volume instead
+                if (newVolume != app.volume) {
+                    app.volume = newVolume
+                    return
+                }
+            }
+        }
+
+        // 3. Default to music stream
+        manager.audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, direction, 4096)
+    }
+
+    override fun onKeyEvent(event: KeyEvent): Boolean {
         Log.i(
             TAG,
             "onKeyEvent action = ${event.action}, key code = ${event.keyCode}, shizuku permission = ${manager.shizukuStatus}"
@@ -380,23 +451,33 @@ class Service : AccessibilityService() {
 
         when (event.keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP -> {
-                if (view != null) {
-                    manager.audioManager.adjustSuggestedStreamVolume(
-                        AudioManager.ADJUST_RAISE, AudioManager.USE_DEFAULT_STREAM_TYPE, 0
-                    )
+                when (event.action) {
+                    KeyEvent.ACTION_DOWN -> {
+                        startVolumeRepeat(1)
+                        showView()
+                        return true
+                    }
+
+                    KeyEvent.ACTION_UP -> {
+                        stopVolumeRepeat()
+                        return true
+                    }
                 }
-                showView()
-                return true
             }
 
             KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                if (view != null) {
-                    manager.audioManager.adjustSuggestedStreamVolume(
-                        AudioManager.ADJUST_LOWER, AudioManager.USE_DEFAULT_STREAM_TYPE, 0
-                    )
+                when (event.action) {
+                    KeyEvent.ACTION_DOWN -> {
+                        startVolumeRepeat(-1)
+                        showView()
+                        return true
+                    }
+
+                    KeyEvent.ACTION_UP -> {
+                        stopVolumeRepeat()
+                        return true
+                    }
                 }
-                showView()
-                return true
             }
         }
 
