@@ -142,7 +142,10 @@ data class App(
         )
 
         // Apply volume to potentially new player
-        config.setVolume(_volume)
+        if (!config.setVolume(_volume)) {
+            // Player is dead, don't add it
+            return
+        }
 
         _players.add(config)
 
@@ -152,9 +155,14 @@ data class App(
     }
 
     fun applyVolume(value: Float) {
+        val deadPlayers = mutableListOf<AudioPlaybackConfigurationProxy>()
         for (player in players) {
-            player.setVolume(value)
+            if (!player.setVolume(value)) {
+                deadPlayers.add(player)
+            }
         }
+        // Remove dead players
+        _players.removeAll(deadPlayers)
     }
 
     private var _isPlayer by mutableStateOf(preferences.isPlayer)

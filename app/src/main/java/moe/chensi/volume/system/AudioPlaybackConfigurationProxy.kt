@@ -52,7 +52,16 @@ class AudioPlaybackConfigurationProxy(raw: AudioPlaybackConfiguration) {
             return playerState == PlayerState.Started
         }
 
-    fun setVolume(value: Float) {
-        player.call("setVolume", value)
+    fun setVolume(value: Float): Boolean {
+        return try {
+            player.call("setVolume", value)
+            true
+        } catch (e: java.lang.reflect.InvocationTargetException) {
+            if (e.cause is android.os.DeadObjectException) {
+                false
+            } else {
+                throw e
+            }
+        }
     }
 }
