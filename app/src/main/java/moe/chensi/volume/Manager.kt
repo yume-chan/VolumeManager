@@ -115,7 +115,7 @@ class Manager(context: Context, dataStore: DataStore<Preferences>) {
         val isShizukuInstalled = try {
             context.packageManager.getPackageInfo(SHIZUKU_PACKAGE_NAME, 0)
             true
-        } catch (e: PackageManager.NameNotFoundException) {
+        } catch (_: PackageManager.NameNotFoundException) {
             false
         }
 

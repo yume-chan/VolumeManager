@@ -1,5 +1,6 @@
 package moe.chensi.volume
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import java.io.File
@@ -9,6 +10,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@SuppressLint("StaticFieldLeak")
 object CrashHandler : Thread.UncaughtExceptionHandler {
     private const val TAG = "VolumeManager.CrashHandler"
     private const val CRASH_FILE_NAME = "last_crash.txt"

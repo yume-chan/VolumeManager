@@ -11,8 +11,7 @@ import org.joor.Reflect
 
 class ActivityTaskManagerProxy(context: Context) {
     @SuppressLint("WrongConstant")
-    val activityTaskManager: Reflect =
-        context.getSystemService("activity_task").run(Reflect::on)
+    val activityTaskManager: Reflect = context.getSystemService("activity_task").run(Reflect::on)
 
     init {
         val service = activityTaskManager.call("getService").get<Any>()
@@ -23,8 +22,8 @@ class ActivityTaskManagerProxy(context: Context) {
 
     @EnableBinderProxy
     fun getForegroundTask(): Task? {
-        val tasks = activityTaskManager.call("getTasks", 1)
-            .get<List<ActivityManager.RunningTaskInfo>>()
+        val tasks =
+            activityTaskManager.call("getTasks", 1).get<List<ActivityManager.RunningTaskInfo>>()
         if (tasks.isEmpty()) {
             return null
         }

@@ -1,7 +1,10 @@
 package moe.chensi.volume.system
 
 import android.media.AudioPlaybackConfiguration
+import android.os.DeadObjectException
 import org.joor.Reflect
+import org.joor.ReflectException
+import java.lang.reflect.InvocationTargetException
 
 class AudioPlaybackConfigurationProxy(raw: AudioPlaybackConfiguration) {
     enum class PlayerState(val value: Int) {
@@ -56,8 +59,9 @@ class AudioPlaybackConfigurationProxy(raw: AudioPlaybackConfiguration) {
         return try {
             player.call("setVolume", value)
             true
-        } catch (e: java.lang.reflect.InvocationTargetException) {
-            if (e.cause is android.os.DeadObjectException) {
+        } catch (e: ReflectException) {
+            val cause = e.cause
+            if (cause is InvocationTargetException && cause.cause is DeadObjectException) {
                 false
             } else {
                 throw e

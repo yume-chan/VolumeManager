@@ -53,8 +53,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
-import moe.chensi.volume.BuildConfig
-import moe.chensi.volume.R
+import androidx.core.net.toUri
 import moe.chensi.volume.compose.AppVolumeList
 import moe.chensi.volume.compose.CrashReportDialog
 import moe.chensi.volume.compose.ToggleButton
@@ -236,7 +235,7 @@ class MainActivity : ComponentActivity() {
                                         onClick = {
                                             val intent = Intent(
                                                 Intent.ACTION_VIEW,
-                                                Uri.parse("https://play.google.com/store/apps/details?id=${Manager.SHIZUKU_PACKAGE_NAME}")
+                                                "https://play.google.com/store/apps/details?id=${Manager.SHIZUKU_PACKAGE_NAME}".toUri()
                                             )
                                             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                             context.startActivity(intent)
@@ -248,7 +247,7 @@ class MainActivity : ComponentActivity() {
                                         onClick = {
                                             val intent = Intent(
                                                 Intent.ACTION_VIEW,
-                                                Uri.parse("https://github.com/RikkaApps/Shizuku/releases")
+                                                "https://github.com/RikkaApps/Shizuku/releases".toUri()
                                             )
                                             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                             context.startActivity(intent)
@@ -311,6 +310,7 @@ class MainActivity : ComponentActivity() {
 
     data class ErrorInfo(val message: String, val stack: String)
 
+    @SuppressLint("BatteryLife")
     fun openBatterySettings() {
         val intent = Intent(
             Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
