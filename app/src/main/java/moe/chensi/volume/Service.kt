@@ -13,7 +13,8 @@ import android.content.IntentFilter
 import android.graphics.PixelFormat
 import android.media.AudioManager
 import android.os.Build
-import android.os.CountDownTimer
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.Gravity
 import android.view.KeyEvent
@@ -24,23 +25,16 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -66,7 +60,10 @@ class Service : AccessibilityService() {
         private const val TAG = "VolumeManager.Service"
 
         private const val ANIMATION_DURATION = 300L
+
         private const val IDLE_TIMEOUT = 5000L
+        private const val AUTO_REPEAT_DELAY = 100L
+        private const val AUTO_REPEAT_INITIAL_DELAY = 500L
     }
 
     private val windowManager: WindowManager by lazy {
@@ -78,17 +75,54 @@ class Service : AccessibilityService() {
     }
     private lateinit var manager: Manager
 
-    private var idleTimer: CountDownTimer? = null
-
-    private fun startIdleTimer() {
-        idleTimer?.cancel()
-        idleTimer = object : CountDownTimer(IDLE_TIMEOUT, IDLE_TIMEOUT) {
-            override fun onTick(millisUntilFinished: Long) {}
-
-            override fun onFinish() {
-                hideView()
+    private val handler = object : Handler(Looper.getMainLooper()) {
+        fun hideView() {
+            if (viewVisible) {
+                Log.i(TAG, "animate out")
+                animateAlpha(layoutParams.alpha, 0f, ANIMATION_DURATION) {
+                    if (!viewVisible) {
+                        Log.i(TAG, "remove view")
+                        view!!.background = null
+                        lifecycle?.currentState = Lifecycle.State.DESTROYED
+                        windowManager.removeView(view)
+                        view = null
+                    }
+                }
+                viewVisible = false
             }
-        }.start()
+        }
+
+        private val hideViewRunnable = Runnable(::hideView)
+
+        fun startIdleTimer() {
+            removeCallbacks(hideViewRunnable)
+            postDelayed(hideViewRunnable, IDLE_TIMEOUT)
+        }
+
+        private var repeatAdjustVolumeDirection = 0
+        private val repeatAdjustVolumeRunnable: Runnable = Runnable {
+            adjustVolume()
+            postDelayed(repeatAdjustVolumeRunnable, AUTO_REPEAT_DELAY)
+        }
+
+        private fun adjustVolume() {
+            manager.audioManager.adjustSuggestedStreamVolume(
+                repeatAdjustVolumeDirection, AudioManager.USE_DEFAULT_STREAM_TYPE, 0
+            )
+            VolumeChangeObserver.notifyVolumeChanged()
+            startIdleTimer()
+        }
+
+        fun startRepeatAdjustVolume(direction: Int) {
+            repeatAdjustVolumeDirection = direction
+            adjustVolume()
+            postDelayed(repeatAdjustVolumeRunnable, AUTO_REPEAT_INITIAL_DELAY)
+        }
+
+        fun stopRepeatAdjustVolume() {
+            removeCallbacks(repeatAdjustVolumeRunnable)
+            startIdleTimer()
+        }
     }
 
     private var lifecycle: LifecycleRegistry? = null
@@ -133,7 +167,7 @@ class Service : AccessibilityService() {
                         }.get()
                 }
 
-                startIdleTimer()
+                this@Service.handler.startIdleTimer()
             }
 
             @SuppressLint("ClickableViewAccessibility")
@@ -141,7 +175,7 @@ class Service : AccessibilityService() {
                 Log.i(TAG, "onTouchEvent ${event.actionMasked}")
 
                 if (event.actionMasked == MotionEvent.ACTION_OUTSIDE) {
-                    hideView()
+                    this@Service.handler.hideView()
                     return true
                 }
 
@@ -165,14 +199,16 @@ class Service : AccessibilityService() {
                             AppVolumeList(
                                 manager.apps.values,
                                 showAll = false,
-                                onChange = { startIdleTimer() }) {
+                                onChange = this@Service.handler::startIdleTimer
+                            ) {
                                 item(AudioManager.STREAM_MUSIC) {
                                     StreamVolumeSlider(
                                         AudioManager.STREAM_MUSIC,
                                         Icons.Default.MusicNote,
                                         "Music",
                                         manager.audioManager,
-                                        onChange = { startIdleTimer() })
+                                        onChange = this@Service.handler::startIdleTimer
+                                    )
                                 }
 
                                 item(AudioManager.STREAM_NOTIFICATION) {
@@ -181,7 +217,8 @@ class Service : AccessibilityService() {
                                         Icons.Default.Notifications,
                                         "Notifications",
                                         manager.audioManager,
-                                        onChange = { startIdleTimer() })
+                                        onChange = this@Service.handler::startIdleTimer
+                                    )
                                 }
                             }
                         }
@@ -221,23 +258,7 @@ class Service : AccessibilityService() {
             viewVisible = true
         }
 
-        startIdleTimer()
-    }
-
-    private fun hideView() {
-        if (viewVisible) {
-            Log.i(TAG, "animate out")
-            animateAlpha(layoutParams.alpha, 0f, ANIMATION_DURATION) {
-                if (!viewVisible) {
-                    Log.i(TAG, "remove view")
-                    view!!.background = null
-                    lifecycle?.currentState = Lifecycle.State.DESTROYED
-                    windowManager.removeView(view)
-                    view = null
-                }
-            }
-            viewVisible = false
-        }
+        handler.startIdleTimer()
     }
 
     private var currentAnimator: ValueAnimator? = null
@@ -334,19 +355,22 @@ class Service : AccessibilityService() {
     val activityTaskManager by lazy { ActivityTaskManagerProxy(this) }
 
     override fun onKeyEvent(event: KeyEvent): Boolean {
-        if (event.action != KeyEvent.ACTION_DOWN) {
-            return false
-        }
-
         Log.i(
             TAG,
             "onKeyEvent action = ${event.action}, key code = ${event.keyCode}, shizuku permission = ${manager.shizukuStatus}"
         )
 
+        // Only handle `VOLUME_UP` and `VOLUME_DOWN`
+        if (event.keyCode != KeyEvent.KEYCODE_VOLUME_UP && event.keyCode != KeyEvent.KEYCODE_VOLUME_DOWN) {
+            return false
+        }
+
+        // Ignore if Shizuku is not ready
         if (manager.shizukuStatus != Manager.ShizukuStatus.Connected) {
             return false
         }
 
+        // Check foreground task ignorance list
         val task = activityTaskManager.getForegroundTask()
         Log.i(TAG, "onKeyEvent foreground task: $task")
 
@@ -357,30 +381,21 @@ class Service : AccessibilityService() {
             }
         }
 
-        when (event.keyCode) {
-            KeyEvent.KEYCODE_VOLUME_UP -> {
-                if (view != null) {
-                    manager.audioManager.adjustSuggestedStreamVolume(
-                        AudioManager.ADJUST_RAISE, AudioManager.USE_DEFAULT_STREAM_TYPE, 0
-                    )
-                    VolumeChangeObserver.notifyVolumeChanged()
-                }
+        when (event.action) {
+            KeyEvent.ACTION_DOWN -> {
+                handler.startRepeatAdjustVolume(
+                    if (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+                        AudioManager.ADJUST_RAISE
+                    } else {
+                        AudioManager.ADJUST_LOWER
+                    }
+                )
                 showView()
-                return true
             }
 
-            KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                if (view != null) {
-                    manager.audioManager.adjustSuggestedStreamVolume(
-                        AudioManager.ADJUST_LOWER, AudioManager.USE_DEFAULT_STREAM_TYPE, 0
-                    )
-                    VolumeChangeObserver.notifyVolumeChanged()
-                }
-                showView()
-                return true
-            }
+            KeyEvent.ACTION_UP -> handler.stopRepeatAdjustVolume()
         }
 
-        return false
+        return true
     }
 }
