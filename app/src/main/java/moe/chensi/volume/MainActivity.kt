@@ -214,7 +214,7 @@ class MainActivity : ComponentActivity() {
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier
                             .padding(innerPadding)
-                            .padding(16.dp)
+                            .padding(16.dp, 0.dp)
                     ) {
                         when (manager.shizukuStatus) {
                             Manager.ShizukuStatus.Uninstalled -> {

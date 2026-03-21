@@ -1,6 +1,7 @@
 package moe.chensi.volume.compose
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -43,7 +44,10 @@ fun AppVolumeList(
     onChange: (() -> Unit)? = null,
     content: (LazyListScope.() -> Unit)? = null
 ) {
-    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(bottom = 16.dp)
+    ) {
         content?.invoke(this)
 
         if (!showAll) {

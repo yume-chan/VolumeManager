@@ -14,7 +14,7 @@ plugins {
 androidAopConfig {
     // enabled is false, the aspect no longer works, the default is not written as true
     enabled = true
-    debug = true
+    debug = false
 
     // include does not set all scans by default. After setting, only the code of the set package name will be scanned.
 //    include("moe.chensi.volume")
@@ -33,7 +33,7 @@ androidAopConfig {
     // verifyLeafExtends Whether to turn on verification leaf inheritance, it is turned on by default. If type = MatchType.LEAF_EXTENDS of @AndroidAopMatchClassMethod is not set, it can be turned off.
     verifyLeafExtends = true
     //Disabled by default. Enabled after Build or Packaging, a cut information file will be generated in app/build/tmp/ (cutInfo.json, cutInfo.html)
-    cutInfoJson = true
+    cutInfoJson = false
 }
 
 android {
@@ -45,8 +45,8 @@ android {
         applicationId = "moe.chensi.volume"
         minSdk = 33
         targetSdk = 35
-        versionCode = 16
-        versionName = "0.3-beta.12"
+        versionCode = 17
+        versionName = "0.3-beta.13"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
