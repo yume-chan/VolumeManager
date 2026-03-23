@@ -22,6 +22,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import moe.chensi.volume.data.App
+import moe.chensi.volume.icons.Hook
+import moe.chensi.volume.icons.HookOff
 import moe.chensi.volume.ui.theme.Typography
 import kotlin.math.roundToInt
 
@@ -92,9 +94,9 @@ fun AppVolumeSlider(
 
             ToggleButton(
                 checked = app.disableVolumeButtons,
-                checkedIcon = Icons.AutoMirrored.Default.VolumeOff,
+                checkedIcon = HookOff,
                 checkedDescription = "Enable volume buttons",
-                uncheckedIcon = Icons.AutoMirrored.Default.VolumeUp,
+                uncheckedIcon = Hook,
                 uncheckedDescription = "Disable volume buttons"
             ) {
                 app.disableVolumeButtons = it

@@ -20,6 +20,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -139,7 +140,8 @@ class MainActivity : ComponentActivity() {
         val manager = application.manager
 
         CrashHandler.ensureInitialized(this)
-        val showCrashReport = CrashHandler.hasCrashReport() && CrashHandler.readCrashReport() != null
+        val showCrashReport =
+            CrashHandler.hasCrashReport() && CrashHandler.readCrashReport() != null
 
         checkBatteryOptimization()
 
@@ -292,7 +294,11 @@ class MainActivity : ComponentActivity() {
 
                             Manager.ShizukuStatus.Connected -> {
                                 ServiceStatus()
-                                AppVolumeList(manager.apps.values, showAll)
+                                AppVolumeList(
+                                    PaddingValues(bottom = 16.dp),
+                                    manager.apps.values,
+                                    showAll
+                                )
                             }
                         }
                     }

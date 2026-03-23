@@ -39,6 +39,7 @@ fun LazyListScope.group(
 
 @Composable
 fun AppVolumeList(
+    contentPadding: PaddingValues = PaddingValues(0.dp),
     apps: MutableCollection<App>,
     showAll: Boolean,
     onChange: (() -> Unit)? = null,
@@ -46,7 +47,7 @@ fun AppVolumeList(
 ) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(bottom = 16.dp)
+        contentPadding = contentPadding
     ) {
         content?.invoke(this)
 

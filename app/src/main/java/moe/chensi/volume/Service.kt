@@ -115,7 +115,9 @@ class Service : AccessibilityService() {
 
         fun startRepeatAdjustVolume(direction: Int) {
             repeatAdjustVolumeDirection = direction
-            adjustVolume()
+            if (view != null) {
+                adjustVolume()
+            }
             postDelayed(repeatAdjustVolumeRunnable, AUTO_REPEAT_INITIAL_DELAY)
         }
 
@@ -197,7 +199,7 @@ class Service : AccessibilityService() {
                                 .padding(20.dp, 16.dp)
                         ) {
                             AppVolumeList(
-                                manager.apps.values,
+                                apps = manager.apps.values,
                                 showAll = false,
                                 onChange = this@Service.handler::startIdleTimer
                             ) {
