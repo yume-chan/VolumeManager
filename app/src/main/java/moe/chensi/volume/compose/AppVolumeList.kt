@@ -43,15 +43,17 @@ fun LazyListScope.group(
 
 @Composable
 fun AppVolumeList(
+    modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     apps: MutableCollection<App>,
+    showEmpty: Boolean = false,
     showAll: Boolean,
     onChange: (() -> Unit)? = null,
     onShowAll: (() -> Unit)? = null,
     content: (LazyListScope.() -> Unit)? = null
 ) {
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = contentPadding
     ) {
@@ -61,13 +63,16 @@ fun AppVolumeList(
             val activePlayers =
                 apps.filter { app -> !app.hidden && app.isPlaying }.sortedWith(App.comparator)
 
-            if (activePlayers.isEmpty()) {
+            if (activePlayers.isNotEmpty()) {
+                items(items = activePlayers, key = { app -> app.packageName }) { app ->
+                    AppVolumeSlider(app, showOptions = false, onChange = onChange)
+                }
+            } else if (showEmpty) {
                 item {
                     Column(
                         modifier = Modifier.fillParentMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(
-                            12.dp,
-                            Alignment.CenterVertically
+                            12.dp, Alignment.CenterVertically
                         ),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
@@ -77,10 +82,6 @@ fun AppVolumeList(
                             Text(text = "Show all apps")
                         }
                     }
-                }
-            } else {
-                items(items = activePlayers, key = { app -> app.packageName }) { app ->
-                    AppVolumeSlider(app, showOptions = false, onChange = onChange)
                 }
             }
             return@LazyColumn

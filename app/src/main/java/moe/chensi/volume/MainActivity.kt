@@ -292,8 +292,10 @@ class MainActivity : ComponentActivity() {
                                 ServiceStatus()
 
                                 AppVolumeList(
+                                    modifier = Modifier.fillMaxSize(),
                                     contentPadding = PaddingValues(bottom = 16.dp),
                                     apps = manager.apps.values,
+                                    showEmpty = true,
                                     showAll = showAll,
                                     onShowAll = { showAll = true })
                             }
