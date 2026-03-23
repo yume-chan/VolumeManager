@@ -340,8 +340,6 @@ class Service : AccessibilityService() {
 
     override fun onInterrupt() {
         Log.i(TAG, "onInterrupt")
-
-        unregisterReceiver(broadcastReceiver)
     }
 
     override fun onDestroy() {
