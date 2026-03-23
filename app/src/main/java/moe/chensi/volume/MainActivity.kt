@@ -53,6 +53,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.net.toUri
 import moe.chensi.volume.compose.AppVolumeList
@@ -157,9 +158,8 @@ class MainActivity : ComponentActivity() {
 
             if (crashReport != null) {
                 crashReport?.let { report ->
-                    androidx.compose.ui.window.Dialog(
-                        onDismissRequest = { },
-                        properties = DialogProperties(
+                    Dialog(
+                        onDismissRequest = { }, properties = DialogProperties(
                             dismissOnBackPress = false,
                             dismissOnClickOutside = false,
                             usePlatformDefaultWidth = false
@@ -167,12 +167,10 @@ class MainActivity : ComponentActivity() {
                     ) {
                         VolumeManagerTheme {
                             CrashReportDialog(
-                                crashReport = report,
-                                onDismiss = {
+                                crashReport = report, onDismiss = {
                                     CrashHandler.clearCrashReport()
                                     crashReport = null
-                                }
-                            )
+                                })
                         }
                     }
                 }
@@ -241,8 +239,7 @@ class MainActivity : ComponentActivity() {
                                             )
                                             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                             context.startActivity(intent)
-                                        }
-                                    ) {
+                                        }) {
                                         Text("Get Shizuku on Play Store")
                                     }
                                     Button(
@@ -253,8 +250,7 @@ class MainActivity : ComponentActivity() {
                                             )
                                             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                             context.startActivity(intent)
-                                        }
-                                    ) {
+                                        }) {
                                         Text("Get Shizuku on GitHub")
                                     }
                                 }
@@ -294,11 +290,12 @@ class MainActivity : ComponentActivity() {
 
                             Manager.ShizukuStatus.Connected -> {
                                 ServiceStatus()
+
                                 AppVolumeList(
-                                    PaddingValues(bottom = 16.dp),
-                                    manager.apps.values,
-                                    showAll
-                                )
+                                    contentPadding = PaddingValues(bottom = 16.dp),
+                                    apps = manager.apps.values,
+                                    showAll = showAll,
+                                    onShowAll = { showAll = true })
                             }
                         }
                     }

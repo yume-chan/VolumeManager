@@ -1,14 +1,18 @@
 package moe.chensi.volume.compose
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -43,18 +47,41 @@ fun AppVolumeList(
     apps: MutableCollection<App>,
     showAll: Boolean,
     onChange: (() -> Unit)? = null,
+    onShowAll: (() -> Unit)? = null,
     content: (LazyListScope.() -> Unit)? = null
 ) {
     LazyColumn(
+        modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = contentPadding
     ) {
         content?.invoke(this)
 
         if (!showAll) {
-            items(items = apps.filter { app -> !app.hidden && app.isPlaying }
-                .sortedWith(App.comparator), key = { app -> app.packageName }) { app ->
-                AppVolumeSlider(app, showOptions = false, onChange = onChange)
+            val activePlayers =
+                apps.filter { app -> !app.hidden && app.isPlaying }.sortedWith(App.comparator)
+
+            if (activePlayers.isEmpty()) {
+                item {
+                    Column(
+                        modifier = Modifier.fillParentMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(
+                            12.dp,
+                            Alignment.CenterVertically
+                        ),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(text = "No active players")
+
+                        Button(onClick = { onShowAll?.invoke() }) {
+                            Text(text = "Show all apps")
+                        }
+                    }
+                }
+            } else {
+                items(items = activePlayers, key = { app -> app.packageName }) { app ->
+                    AppVolumeSlider(app, showOptions = false, onChange = onChange)
+                }
             }
             return@LazyColumn
         }
