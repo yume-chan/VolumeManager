@@ -12,10 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: "temurin"
           java-version: "21"
@@ -35,8 +35,10 @@ jobs:
             --key-pass pass:${{ secrets.KEY_PASSWORD }} \
             app/build/outputs/apk/release/app-release-unsigned.apk
 
+      - run: cp app/build/outputs/apk/release/app-release-unsigned.apk volume-manager.apk
+
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: volume-manager.apk
-          path: app/build/outputs/apk/release/app-release-unsigned.apk
+          path: volume-manager.apk
+          archive: false
