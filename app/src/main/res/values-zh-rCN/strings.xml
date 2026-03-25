@@ -8,4 +8,6 @@
     <string name="group_other">其它应用</string>
     <string name="group_system">系统应用</string>
     <string name="test_crash">测试崩溃</string>
+    <string name="close">关闭</string>
+    <string name="jump_to_group">跳转到分组</string>
 </resources>

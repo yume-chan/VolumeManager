@@ -7,4 +7,6 @@
     <string name="group_other">Non-players</string>
     <string name="group_system">System apps</string>
     <string name="test_crash">Test Crash</string>
+    <string name="close">Close</string>
+    <string name="jump_to_group">Jump to group</string>
 </resources>
