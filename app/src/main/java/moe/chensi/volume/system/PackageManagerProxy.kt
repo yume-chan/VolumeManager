@@ -2,6 +2,8 @@ package moe.chensi.volume.system
 
 import android.content.Context
 import android.content.pm.ApplicationInfo
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.drawable.toBitmap
@@ -13,6 +15,8 @@ import java.util.WeakHashMap
 class PackageManagerProxy private constructor(context: Context) {
     companion object {
         private val cache = WeakHashMap<Context, PackageManagerProxy>()
+
+        private const val MATCH_ANY_USER = 0x00000400
 
         fun get(context: Context): PackageManagerProxy {
             return cache.getOrPut(context) { PackageManagerProxy(context) }
@@ -37,17 +41,8 @@ class PackageManagerProxy private constructor(context: Context) {
     }
 
     @EnableBinderProxy
-    fun getInstalledApplicationsForAllUsers(): List<ApplicationInfo> {
-        val apps = mutableMapOf<String, ApplicationInfo>()
-
-        for (userId in userManager.getUserIds()) {
-            for (app in reflect.call("getInstalledApplicationsAsUser", 0, userId)
-                .get<List<ApplicationInfo>>()) {
-                apps[app.packageName] = app
-            }
-        }
-
-        return apps.values.toList()
+    fun getInstalledPackagesForAllUsers(): List<PackageInfo> {
+        return packageManager.getInstalledPackages(MATCH_ANY_USER or PackageManager.GET_ACTIVITIES)
     }
 
     @EnableBinderProxy

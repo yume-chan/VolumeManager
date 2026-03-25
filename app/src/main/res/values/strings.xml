@@ -5,5 +5,6 @@
     <string name="group_inactive">Inactive</string>
     <string name="group_hidden">Hidden</string>
     <string name="group_other">Non-players</string>
+    <string name="group_system">System apps</string>
     <string name="test_crash">Test Crash</string>
 </resources>

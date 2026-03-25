@@ -1,9 +1,11 @@
 package moe.chensi.volume.compose
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -26,11 +28,15 @@ fun LazyListScope.group(
     onChange: (() -> Unit)? = null
 ) {
     if (apps.isNotEmpty()) {
-        item {
+        stickyHeader {
             Text(
                 text = header(),
                 style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 4.dp)
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(start = 16.dp, top = 8.dp, bottom = 8.dp)
             )
         }
 
@@ -90,7 +96,8 @@ fun AppVolumeList(
         val activePlayers = mutableListOf<App>()
         val inactivePlayers = mutableListOf<App>()
         val hiddenPlayers = mutableListOf<App>()
-        val otherApps = mutableListOf<App>()
+        val otherAppsWithActivities = mutableListOf<App>()
+        val otherAppsWithoutActivities = mutableListOf<App>()
 
         for (app in apps) {
             if (app.isPlayer) {
@@ -104,7 +111,11 @@ fun AppVolumeList(
                     hiddenPlayers.add(app)
                 }
             } else {
-                otherApps.add(app)
+                if (app.hasAnyActivity) {
+                    otherAppsWithActivities.add(app)
+                } else {
+                    otherAppsWithoutActivities.add(app)
+                }
             }
         }
 
@@ -113,7 +124,13 @@ fun AppVolumeList(
         group({ stringResource(R.string.group_hidden) }, hiddenPlayers, onChange = onChange)
         group(
             { stringResource(R.string.group_other) },
-            otherApps,
+            otherAppsWithActivities,
+            enableHide = false,
+            onChange = onChange
+        )
+        group(
+            { stringResource(R.string.group_system) },
+            otherAppsWithoutActivities,
             enableHide = false,
             onChange = onChange
         )

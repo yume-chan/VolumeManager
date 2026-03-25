@@ -50,13 +50,14 @@ class Manager(context: Context, dataStore: DataStore<Preferences>) {
     val apps = mutableStateMapOf<String, App>()
 
     private fun reloadApps() {
-        for (app in packageManager.getInstalledApplicationsForAllUsers()) {
-            if (!apps.containsKey(app.packageName)) {
-                apps[app.packageName] = App(
+        for (packageInfo in packageManager.getInstalledPackagesForAllUsers()) {
+            val appInfo = packageInfo.applicationInfo ?: continue
+            if (!apps.containsKey(packageInfo.packageName)) {
+                apps[packageInfo.packageName] = App(
                     packageManager,
-                    app,
-                    packageManager.loadLabel(app),
-                    appPreferencesStore.getOrCreate(app.packageName),
+                    packageInfo,
+                    packageManager.loadLabel(appInfo),
+                    appPreferencesStore.getOrCreate(packageInfo.packageName),
                     appPreferencesStore::save
                 )
             }

@@ -1,6 +1,6 @@
 package moe.chensi.volume.data
 
-import android.content.pm.ApplicationInfo
+import android.content.pm.PackageInfo
 import android.icu.text.Collator
 import android.icu.text.Transliterator
 import android.util.Log
@@ -21,7 +21,7 @@ import java.util.Locale
 
 data class App(
     val packageManager: PackageManagerProxy,
-    val applicationInfo: ApplicationInfo,
+    val packageInfo: PackageInfo,
     val name: String,
     private var preferences: AppPreferences,
     private val savePreferences: () -> Unit
@@ -91,7 +91,13 @@ data class App(
     }
 
     val packageName: String
-        get() = applicationInfo.packageName
+        get() = packageInfo.packageName
+
+    val hasAnyActivity: Boolean
+        get() = packageInfo.activities?.isNotEmpty() == true
+
+    val applicationInfo
+        get() = packageInfo.applicationInfo!!
 
     private var _icon by mutableStateOf<ImageBitmap?>(null)
     private var _iconLoading = false
