@@ -15,6 +15,10 @@
 # Preserve line number information for debugging stack traces.
 -keepattributes SourceFile,LineNumberTable
 
+# Preserve class and method names in stack traces without disabling
+# dead code elimination (shrinking) or other optimizations.
+-dontobfuscate
+
 -keepclassmembers class rikka.shizuku.Shizuku {
     static private rikka.shizuku.ShizukuRemoteProcess newProcess(java.lang.String[], java.lang.String[], java.lang.String);
 }
