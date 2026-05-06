@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
@@ -56,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.net.toUri
+import moe.chensi.volume.compose.AboutDialog
 import moe.chensi.volume.compose.AppVolumeList
 import moe.chensi.volume.compose.CrashReportDialog
 import moe.chensi.volume.compose.ToggleButton
@@ -149,6 +151,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             var showAll by remember { mutableStateOf(false) }
             var crashReport by remember { mutableStateOf<String?>(null) }
+            var showAboutDialog by remember { mutableStateOf(false) }
 
             LaunchedEffect(showCrashReport) {
                 if (showCrashReport) {
@@ -176,6 +179,17 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            if (showAboutDialog) {
+                Dialog(
+                    onDismissRequest = { showAboutDialog = false },
+                    properties = DialogProperties(usePlatformDefaultWidth = false)
+                ) {
+                    VolumeManagerTheme {
+                        AboutDialog(onDismiss = { showAboutDialog = false })
+                    }
+                }
+            }
+
             VolumeManagerTheme {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(), topBar = {
@@ -189,6 +203,21 @@ class MainActivity : ComponentActivity() {
                                     uncheckedDescription = "Show all apps"
                                 ) {
                                     showAll = it
+                                }
+                            }
+
+                            TooltipBox(
+                                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                    TooltipAnchorPosition.Below, 12.dp
+                                ),
+                                tooltip = { PlainTooltip { Text(stringResource(R.string.about)) } },
+                                state = rememberTooltipState()
+                            ) {
+                                IconButton(onClick = { showAboutDialog = true }) {
+                                    Icon(
+                                        Icons.Default.Info,
+                                        contentDescription = stringResource(R.string.about)
+                                    )
                                 }
                             }
 
