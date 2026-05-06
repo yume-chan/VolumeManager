@@ -24,11 +24,12 @@ class AppPreferencesStore(private val dataStore: DataStore<Preferences>) {
         val values: MutableList<AppPreferences>, val indices: MutableMap<String, Int>
     )
 
+    private val lock = Any()
     private var state = SerializedState(mutableListOf(), mutableMapOf())
     val values: List<AppPreferences>
         get() = state.values
     val indices: Map<String, Int>
-        get() = state.indices
+        get() = synchronized(lock) { state.indices.toMap() }
 
     fun track(onChange: (first: Boolean) -> Unit) {
         var first = true
@@ -37,7 +38,9 @@ class AppPreferencesStore(private val dataStore: DataStore<Preferences>) {
             dataStore.data.collect { preferences ->
                 val valueJson = preferences[key]
                 if (valueJson != null) {
-                    state = json.decodeFromString<SerializedState>(valueJson)
+                    synchronized(lock) {
+                        state = json.decodeFromString<SerializedState>(valueJson)
+                    }
                 }
 
                 onChange(first)
@@ -48,7 +51,7 @@ class AppPreferencesStore(private val dataStore: DataStore<Preferences>) {
     }
 
     fun getOrCreate(packageName: String): AppPreferences {
-        synchronized(state) {
+        synchronized(lock) {
             val index = state.indices[packageName]
             if (index != null) {
                 return state.values[index]
