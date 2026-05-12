@@ -46,6 +46,17 @@ class Manager(context: Context, dataStore: DataStore<Preferences>) {
     private val packageManager by lazy { PackageManagerProxy.get(context) }
 
     private val appPreferencesStore = AppPreferencesStore(dataStore)
+    private var _showSystemSlidersInPopup by mutableStateOf(appPreferencesStore.showSystemSlidersInPopup)
+    var showSystemSlidersInPopup: Boolean
+        get() = _showSystemSlidersInPopup
+        set(value) {
+            if (_showSystemSlidersInPopup == value) {
+                return
+            }
+
+            _showSystemSlidersInPopup = value
+            appPreferencesStore.showSystemSlidersInPopup = value
+        }
 
     val apps = mutableStateMapOf<String, App>()
 
@@ -161,6 +172,8 @@ class Manager(context: Context, dataStore: DataStore<Preferences>) {
                     getApp(packageName)?.setPreferences(appPreferencesStore.values[index])
                 }
             }
+
+            _showSystemSlidersInPopup = appPreferencesStore.showSystemSlidersInPopup
 
             if (first) {
                 initialize()

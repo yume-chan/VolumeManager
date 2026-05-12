@@ -28,9 +28,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -45,7 +42,7 @@ import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import moe.chensi.volume.compose.AppVolumeList
-import moe.chensi.volume.compose.StreamVolumeSlider
+import moe.chensi.volume.compose.SystemVolumePanel
 import moe.chensi.volume.compose.VolumeChangeObserver
 import moe.chensi.volume.system.ActivityTaskManagerProxy
 import moe.chensi.volume.ui.theme.VolumeManagerTheme
@@ -203,22 +200,13 @@ class Service : AccessibilityService() {
                                 showAll = false,
                                 onChange = this@Service.handler::startIdleTimer
                             ) {
-                                item(AudioManager.STREAM_MUSIC) {
-                                    StreamVolumeSlider(
-                                        AudioManager.STREAM_MUSIC,
-                                        Icons.Default.MusicNote,
-                                        "Music",
+                                item("system_volume_panel") {
+                                    SystemVolumePanel(
                                         manager.audioManager,
-                                        onChange = this@Service.handler::startIdleTimer
-                                    )
-                                }
-
-                                item(AudioManager.STREAM_NOTIFICATION) {
-                                    StreamVolumeSlider(
-                                        AudioManager.STREAM_NOTIFICATION,
-                                        Icons.Default.Notifications,
-                                        "Notifications",
-                                        manager.audioManager,
+                                        showCallVolumeAlways = false,
+                                        showHideButton = true,
+                                        showSliders = manager.showSystemSlidersInPopup,
+                                        onShowSlidersChange = { manager.showSystemSlidersInPopup = it },
                                         onChange = this@Service.handler::startIdleTimer
                                     )
                                 }

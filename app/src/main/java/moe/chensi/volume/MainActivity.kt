@@ -60,6 +60,7 @@ import androidx.core.net.toUri
 import moe.chensi.volume.compose.AboutDialog
 import moe.chensi.volume.compose.AppVolumeList
 import moe.chensi.volume.compose.CrashReportDialog
+import moe.chensi.volume.compose.SystemVolumePanel
 import moe.chensi.volume.compose.ToggleButton
 import moe.chensi.volume.ui.theme.VolumeManagerTheme
 import org.joor.Reflect
@@ -326,7 +327,18 @@ class MainActivity : ComponentActivity() {
                                     apps = manager.apps.values,
                                     showEmpty = true,
                                     showAll = showAll,
-                                    onShowAll = { showAll = true })
+                                    onShowAll = { showAll = true },
+                                    content = {
+                                        item("system_volume_panel_main") {
+                                            SystemVolumePanel(
+                                                audioManager = manager.audioManager,
+                                                showCallVolumeAlways = true,
+                                                showHideButton = false,
+                                                showSliders = true,
+                                                onShowSlidersChange = { },
+                                            )
+                                        }
+                                    })
                             }
                         }
                     }

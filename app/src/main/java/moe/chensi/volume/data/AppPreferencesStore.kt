@@ -21,7 +21,9 @@ class AppPreferencesStore(private val dataStore: DataStore<Preferences>) {
 
     @Serializable
     private data class SerializedState(
-        val values: MutableList<AppPreferences>, val indices: MutableMap<String, Int>
+        val values: MutableList<AppPreferences>,
+        val indices: MutableMap<String, Int>,
+        val showSystemSlidersInPopup: Boolean = true
     )
 
     private val lock = Any()
@@ -30,6 +32,22 @@ class AppPreferencesStore(private val dataStore: DataStore<Preferences>) {
         get() = state.values
     val indices: Map<String, Int>
         get() = synchronized(lock) { state.indices.toMap() }
+    var showSystemSlidersInPopup: Boolean
+        get() = synchronized(lock) { state.showSystemSlidersInPopup }
+        set(value) {
+            val changed = synchronized(lock) {
+                if (state.showSystemSlidersInPopup == value) {
+                    return@synchronized false
+                }
+
+                state = state.copy(showSystemSlidersInPopup = value)
+                true
+            }
+
+            if (changed) {
+                save()
+            }
+        }
 
     fun track(onChange: (first: Boolean) -> Unit) {
         var first = true

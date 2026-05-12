@@ -14,4 +14,16 @@
     <string name="about_author">作者：%s</string>
     <string name="about_github">在 GitHub 上查看</string>
     <string name="jump_to_group">跳转到分组</string>
+    <string name="stream_media">媒体</string>
+    <string name="stream_ring">铃声</string>
+    <string name="stream_call">通话</string>
+    <string name="stream_alarm">闹钟</string>
+    <string name="stream_notification">通知</string>
+    <string name="brightness">亮度</string>
+    <string name="show_system_sliders_in_popup">在弹窗中显示系统滑块</string>
+    <string name="hide_system_sliders_in_popup">在弹窗中隐藏系统滑块</string>
+    <string name="enable_vibrate_mode">开启振动模式</string>
+    <string name="disable_vibrate_mode">关闭振动模式</string>
+    <string name="enable_do_not_disturb">开启勿扰模式</string>
+    <string name="disable_do_not_disturb">关闭勿扰模式</string>
 </resources>

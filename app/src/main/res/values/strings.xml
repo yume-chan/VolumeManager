@@ -13,4 +13,16 @@
     <string name="about_author">Author: %s</string>
     <string name="about_github">View on GitHub</string>
     <string name="jump_to_group">Jump to group</string>
+    <string name="stream_media">Media</string>
+    <string name="stream_ring">Ring</string>
+    <string name="stream_call">Call</string>
+    <string name="stream_alarm">Alarm</string>
+    <string name="stream_notification">Notification</string>
+    <string name="brightness">Brightness</string>
+    <string name="show_system_sliders_in_popup">Show system sliders in popup</string>
+    <string name="hide_system_sliders_in_popup">Hide system sliders in popup</string>
+    <string name="enable_vibrate_mode">Enable vibrate mode</string>
+    <string name="disable_vibrate_mode">Disable vibrate mode</string>
+    <string name="enable_do_not_disturb">Enable Do Not Disturb</string>
+    <string name="disable_do_not_disturb">Disable Do Not Disturb</string>
 </resources>

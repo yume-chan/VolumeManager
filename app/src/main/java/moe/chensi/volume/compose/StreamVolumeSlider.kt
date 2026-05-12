@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.media.AudioManager
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -80,6 +81,7 @@ fun StreamVolumeSlider(
     icon: ImageVector,
     name: String,
     audioManager: AudioManager,
+    footer: (@Composable () -> Unit)? = null,
     onChange: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
@@ -103,39 +105,43 @@ fun StreamVolumeSlider(
         volume = audioManager.getStreamVolume(streamType)
     }
 
-    TrackSlider(
-        cornerRadius = 20.dp,
-        value = volume.toFloat(),
-        valueRange = 0f..maxVolume,
-        onValueChange = { value ->
-            volume = value.toInt()
-            audioManager.setStreamVolume(streamType, value.toInt(), 0)
-            onChange?.invoke()
-        },
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(12.dp, 8.dp)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        TrackSlider(
+            cornerRadius = 20.dp,
+            value = volume.toFloat(),
+            valueRange = 0f..maxVolume,
+            onValueChange = { value ->
+                volume = value.toInt()
+                audioManager.setStreamVolume(streamType, value.toInt(), 0)
+                onChange?.invoke()
+            },
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = name,
-                modifier = Modifier.size(32.dp),
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(12.dp, 8.dp)
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = name,
+                    modifier = Modifier.size(32.dp),
+                )
 
-            Text(
-                text = name,
-                modifier = Modifier.weight(1f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+                Text(
+                    text = name,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
 
-            Text(
-                text = "$volume/${maxVolume.toInt()}",
-                style = Typography.bodySmall,
-                maxLines = 1,
-            )
+                Text(
+                    text = "$volume/${maxVolume.toInt()}",
+                    style = Typography.bodySmall,
+                    maxLines = 1,
+                )
+            }
         }
+
+        footer?.invoke()
     }
 }
