@@ -57,6 +57,8 @@ object SystemSliderIds {
     const val Brightness = "brightness"
 }
 
+private const val BRIGHTNESS_CHANGE_TOLERANCE = 0.001f
+
 private fun isCallMode(mode: Int): Boolean {
     return mode == AudioManager.MODE_IN_CALL || mode == AudioManager.MODE_IN_COMMUNICATION
 }
@@ -371,7 +373,7 @@ private fun BrightnessSlider(
         value = brightness,
         valueRange = 0f..maxBrightness,
         onValueChange = { value ->
-            if (abs(brightness - value) < 0.001f) {
+            if (abs(brightness - value) < BRIGHTNESS_CHANGE_TOLERANCE) {
                 return@TrackSlider
             }
             brightness = value
