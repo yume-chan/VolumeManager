@@ -1,8 +1,10 @@
 package moe.chensi.volume.system
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.hardware.display.DisplayManager
 import android.os.Handler
+import android.util.Log
 import android.view.Display
 import moe.chensi.volume.EnableBinderProxy
 import moe.chensi.volume.ToggleableBinderProxy
@@ -19,20 +21,40 @@ class DisplayManagerProxy private constructor(context: Context) {
     }
 
     private val displayManager = context.getSystemService(DisplayManager::class.java)!!
+    private val displayManagerGlobalReflect =
+        Reflect.onClass("android.hardware.display.DisplayManagerGlobal").call("getInstance")
     private val displayManagerReflect = Reflect.on(displayManager)
 
     init {
-        val service = Reflect.onClass("android.hardware.display.DisplayManagerGlobal")
-            .call("getInstance")
-            .get<Any>()
-            .run(Reflect::on)
-            .get<Any>("mDm")
+        val service = displayManagerGlobalReflect.get<Any>("mDm")
         ToggleableBinderProxy.wrap(service)
     }
 
+    @SuppressLint("MissingPermission")
     @EnableBinderProxy
-    fun getDefaultDisplayBrightness(): Float {
-        return displayManagerReflect.call("getBrightness", Display.DEFAULT_DISPLAY).get()
+    fun getDefaultDisplayBrightnessGammaPercentage(): Float {
+        val display = displayManager.getDisplay(Display.DEFAULT_DISPLAY)
+        val brightnessInfo = display.brightnessInfo
+        if (brightnessInfo == null) {
+            Log.w(
+                "DisplayManagerProxy",
+                "getDefaultDisplayBrightnessPercentage: brightnessInfo is null"
+            )
+            return 0f
+        }
+        Log.d(
+            "DisplayManagerProxy",
+            "getDefaultDisplayBrightnessPercentage: ${brightnessInfo.brightness} ${brightnessInfo.brightnessMinimum} ${brightnessInfo.brightnessMaximum}"
+        )
+
+        val gamma = BrightnessUtils.convertLinearToGammaPercentage(
+            brightnessInfo.brightness,
+            brightnessInfo.brightnessMinimum,
+            brightnessInfo.brightnessMaximum
+        )
+        Log.d("DisplayManagerProxy", "getDefaultDisplayBrightnessPercentage: $gamma")
+
+        return gamma
     }
 
     /**
@@ -41,9 +63,20 @@ class DisplayManagerProxy private constructor(context: Context) {
      * @param value Brightness in [0f, 1f].
      * Uses reflection to call DisplayManager hidden setBrightness API.
      */
+    @SuppressLint("MissingPermission")
     @EnableBinderProxy
-    fun setDefaultDisplayBrightness(value: Float) {
-        displayManagerReflect.call("setBrightness", Display.DEFAULT_DISPLAY, value)
+    fun setDefaultDisplayBrightnessGammaPercentage(value: Float) {
+        Log.d("DisplayManagerProxy", "setDefaultDisplayBrightnessPercentage: $value")
+
+        val display = displayManager.getDisplay(Display.DEFAULT_DISPLAY)
+        val brightnessInfo = display.brightnessInfo ?: return
+
+        val brightness = BrightnessUtils.convertGammaPercentageToLinear(
+            value, brightnessInfo.brightnessMinimum, brightnessInfo.brightnessMaximum
+        )
+        Log.d("DisplayManagerProxy", "setDefaultDisplayBrightnessPercentage: $brightness")
+
+        displayManagerReflect.call("setBrightness", display.displayId, brightness)
     }
 
     @EnableBinderProxy

@@ -3,6 +3,7 @@ package moe.chensi.volume.compose
 import android.hardware.display.DisplayManager
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.Display
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -26,7 +27,6 @@ import moe.chensi.volume.system.DisplayManagerProxy
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-private const val BRIGHTNESS_SLIDER_MAX = 100f
 private const val BRIGHTNESS_CHANGE_TOLERANCE = 0.001f
 
 @Composable
@@ -35,22 +35,20 @@ fun BrightnessSlider(
     footer: (@Composable () -> Unit)? = null,
     onChange: (() -> Unit)? = null
 ) {
-    fun readBrightnessPercent(): Float {
-        return (displayManagerProxy.getDefaultDisplayBrightness().coerceIn(0f, 1f) * BRIGHTNESS_SLIDER_MAX)
-    }
-
-    var brightnessPercent by remember { mutableFloatStateOf(readBrightnessPercent()) }
+    var brightnessPercent by remember { mutableFloatStateOf(displayManagerProxy.getDefaultDisplayBrightnessGammaPercentage()) }
     val mainThreadHandler = remember { Handler(Looper.getMainLooper()) }
 
     DisposableEffect(displayManagerProxy) {
+
         val listener = object : DisplayManager.DisplayListener {
             override fun onDisplayAdded(displayId: Int) = Unit
 
             override fun onDisplayRemoved(displayId: Int) = Unit
 
             override fun onDisplayChanged(displayId: Int) {
+                Log.d("BrightnessSlider", "onDisplayChanged: $displayId")
                 if (displayId == Display.DEFAULT_DISPLAY) {
-                    brightnessPercent = readBrightnessPercent()
+                    brightnessPercent = displayManagerProxy.getDefaultDisplayBrightnessGammaPercentage()
                 }
             }
         }
@@ -70,14 +68,14 @@ fun BrightnessSlider(
             modifier = Modifier.weight(1f),
             cornerRadius = 20.dp,
             value = brightnessPercent,
-            valueRange = 0f..BRIGHTNESS_SLIDER_MAX,
+            valueRange = 0f..1f,
             onValueChange = { value ->
                 if (abs(brightnessPercent - value) < BRIGHTNESS_CHANGE_TOLERANCE) {
                     return@TrackSlider
                 }
 
                 brightnessPercent = value
-                displayManagerProxy.setDefaultDisplayBrightness((value / BRIGHTNESS_SLIDER_MAX).coerceIn(0f, 1f))
+                displayManagerProxy.setDefaultDisplayBrightnessGammaPercentage(value)
                 onChange?.invoke()
             }
         ) {
@@ -93,7 +91,7 @@ fun BrightnessSlider(
                 )
                 StreamSliderTextContent(
                     name = stringResource(R.string.brightness),
-                    valueText = "${brightnessPercent.roundToInt()}/100"
+                    valueText = "${(brightnessPercent * 100).roundToInt()}%"
                 )
             }
         }
