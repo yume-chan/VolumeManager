@@ -36,6 +36,12 @@ class DisplayManagerProxy private constructor(context: Context) {
     }
 
     @EnableBinderProxy
+    /**
+     * Sets default display brightness.
+     *
+     * @param value Brightness in [0f, 1f].
+     * Uses reflection to call DisplayManager hidden setBrightness API.
+     */
     fun setDefaultDisplayBrightness(value: Float) {
         displayManagerReflect.call("setBrightness", Display.DEFAULT_DISPLAY, value)
     }
