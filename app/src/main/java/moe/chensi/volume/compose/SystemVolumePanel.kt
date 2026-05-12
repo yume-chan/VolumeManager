@@ -51,6 +51,9 @@ private const val CALL_MODE_POLL_INTERVAL_MS = 500L
 private const val DEFAULT_BRIGHTNESS = 127
 private const val TAG = "SystemVolumePanel"
 
+/**
+ * MODE_IN_CALL is for cellular calls, MODE_IN_COMMUNICATION is for VoIP/communication apps.
+ */
 private fun isCallMode(mode: Int): Boolean {
     return mode == AudioManager.MODE_IN_CALL || mode == AudioManager.MODE_IN_COMMUNICATION
 }
@@ -225,7 +228,8 @@ private fun BrightnessSlider(onChange: (() -> Unit)? = null) {
     fun getBrightness(): Int {
         return try {
             Settings.System.getInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS)
-        } catch (_: Settings.SettingNotFoundException) {
+        } catch (e: Settings.SettingNotFoundException) {
+            Log.w(TAG, "Can't read system brightness", e)
             DEFAULT_BRIGHTNESS
         }
     }
