@@ -232,9 +232,10 @@ private fun BrightnessSlider(onChange: (() -> Unit)? = null) {
 
     var brightness by remember { mutableIntStateOf(getBrightness()) }
     val canWrite = Settings.System.canWrite(context)
+    val mainThreadHandler = remember { Handler(Looper.getMainLooper()) }
 
     DisposableEffect(contentResolver) {
-        val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
+        val observer = object : ContentObserver(mainThreadHandler) {
             override fun onChange(selfChange: Boolean) {
                 brightness = getBrightness()
             }
