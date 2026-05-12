@@ -24,6 +24,7 @@ class EnableBinderProxyCut : BasePointCut<EnableBinderProxy> {
 
 class ToggleableBinderProxy(private val base: IBinder) : IBinder by base {
     companion object {
+        private const val SHELL_PACKAGE_NAME = "com.android.shell"
         private val _enabled: ThreadLocal<Boolean> = ThreadLocal<Boolean>.withInitial { false }
 
         var enabled: Boolean
@@ -32,12 +33,34 @@ class ToggleableBinderProxy(private val base: IBinder) : IBinder by base {
 
         fun <T> withEnabled(block: () -> T): T {
             val prev = enabled
+            val restoreActivityThreadPackageName = patchActivityThreadPackageName()
             try {
                 enabled = true
                 return block()
             } finally {
+                restoreActivityThreadPackageName()
                 enabled = prev
             }
+        }
+
+        private fun patchActivityThreadPackageName(): () -> Unit {
+            val field = runCatching {
+                Class.forName("android.app.ActivityThread").getDeclaredField("sCurrentPackageName")
+                    .apply { isAccessible = true }
+            }.getOrNull() ?: return {}
+
+            val holder = runCatching { field.get(null) }.getOrNull()
+            if (holder is ThreadLocal<*>) {
+                @Suppress("UNCHECKED_CAST")
+                val packageNameHolder = holder as ThreadLocal<String?>
+                val previous = packageNameHolder.get()
+                packageNameHolder.set(SHELL_PACKAGE_NAME)
+                return { packageNameHolder.set(previous) }
+            }
+
+            val previous = holder
+            runCatching { field.set(null, SHELL_PACKAGE_NAME) }
+            return { runCatching { field.set(null, previous) } }
         }
 
         fun wrap(proxy: Any) {

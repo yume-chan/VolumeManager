@@ -10,12 +10,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.Brightness6
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -36,6 +38,8 @@ fun BrightnessSlider(
     onChange: (() -> Unit)? = null
 ) {
     var brightnessPercent by remember { mutableFloatStateOf(displayManagerProxy.getDefaultDisplayBrightnessGammaPercentage()) }
+    var autoBrightnessEnabled by remember { mutableStateOf(displayManagerProxy.isAutoBrightnessEnabled()) }
+    var autoBrightnessBias by remember { mutableFloatStateOf(displayManagerProxy.getAutoBrightnessBias()) }
     val mainThreadHandler = remember { Handler(Looper.getMainLooper()) }
 
     DisposableEffect(displayManagerProxy) {
@@ -49,6 +53,8 @@ fun BrightnessSlider(
                 Log.d("BrightnessSlider", "onDisplayChanged: $displayId")
                 if (displayId == Display.DEFAULT_DISPLAY) {
                     brightnessPercent = displayManagerProxy.getDefaultDisplayBrightnessGammaPercentage()
+                    autoBrightnessEnabled = displayManagerProxy.isAutoBrightnessEnabled()
+                    autoBrightnessBias = displayManagerProxy.getAutoBrightnessBias()
                 }
             }
         }
@@ -67,15 +73,23 @@ fun BrightnessSlider(
         TrackSlider(
             modifier = Modifier.weight(1f),
             cornerRadius = 20.dp,
-            value = brightnessPercent,
-            valueRange = 0f..1f,
+            value = if (autoBrightnessEnabled) autoBrightnessBias else brightnessPercent,
+            valueRange = if (autoBrightnessEnabled) -1f..1f else 0f..1f,
             onValueChange = { value ->
-                if (abs(brightnessPercent - value) < BRIGHTNESS_CHANGE_TOLERANCE) {
+                if (autoBrightnessEnabled && abs(autoBrightnessBias - value) < BRIGHTNESS_CHANGE_TOLERANCE) {
+                    return@TrackSlider
+                }
+                if (!autoBrightnessEnabled && abs(brightnessPercent - value) < BRIGHTNESS_CHANGE_TOLERANCE) {
                     return@TrackSlider
                 }
 
-                brightnessPercent = value
-                displayManagerProxy.setDefaultDisplayBrightnessGammaPercentage(value)
+                if (autoBrightnessEnabled) {
+                    autoBrightnessBias = value
+                    displayManagerProxy.setAutoBrightnessBias(value)
+                } else {
+                    brightnessPercent = value
+                    displayManagerProxy.setDefaultDisplayBrightnessGammaPercentage(value)
+                }
                 onChange?.invoke()
             }
         ) {
@@ -91,9 +105,26 @@ fun BrightnessSlider(
                 )
                 StreamSliderTextContent(
                     name = stringResource(R.string.brightness),
-                    valueText = "${(brightnessPercent * 100).roundToInt()}%"
+                    valueText = if (autoBrightnessEnabled) {
+                        "${(autoBrightnessBias * 100).roundToInt()}%"
+                    } else {
+                        "${(brightnessPercent * 100).roundToInt()}%"
+                    }
                 )
             }
+        }
+
+        ToggleButton(
+            checked = autoBrightnessEnabled,
+            checkedDescription = stringResource(R.string.disable_auto_brightness),
+            checkedIcon = Icons.Default.BrightnessAuto,
+            uncheckedDescription = stringResource(R.string.enable_auto_brightness),
+            uncheckedIcon = Icons.Default.Brightness6
+        ) {
+            displayManagerProxy.setAutoBrightnessEnabled(it)
+            autoBrightnessEnabled = displayManagerProxy.isAutoBrightnessEnabled()
+            autoBrightnessBias = displayManagerProxy.getAutoBrightnessBias()
+            onChange?.invoke()
         }
 
         footer?.invoke()
