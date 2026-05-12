@@ -10,6 +10,7 @@ import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -52,6 +53,7 @@ import kotlinx.coroutines.delay
 
 private const val CALL_MODE_POLL_INTERVAL_MS = 500L
 private const val DEFAULT_BRIGHTNESS = 127
+private const val TAG = "SystemVolumePanel"
 
 private fun isCallMode(mode: Int): Boolean {
     return mode == AudioManager.MODE_IN_CALL || mode == AudioManager.MODE_IN_COMMUNICATION
@@ -210,7 +212,8 @@ private fun NotificationModeToggles(audioManager: AudioManager, onChange: (() ->
                 notificationManager.setInterruptionFilter(
                     if (it) NotificationManager.INTERRUPTION_FILTER_NONE else NotificationManager.INTERRUPTION_FILTER_ALL
                 )
-            } catch (_: SecurityException) {
+            } catch (e: SecurityException) {
+                Log.w(TAG, "Can't change interruption filter", e)
             }
             interruptionFilter = notificationManager.currentInterruptionFilter
             onChange?.invoke()
