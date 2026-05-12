@@ -164,7 +164,7 @@ fun SystemVolumePanel(
 @Composable
 private fun NotificationModeToggles(audioManager: AudioManager, onChange: (() -> Unit)? = null) {
     val context = LocalContext.current
-    val notificationManager = context.getSystemService(NotificationManager::class.java)!!
+    val notificationManager = context.getSystemService(NotificationManager::class.java) ?: return
 
     var ringerMode by remember { mutableIntStateOf(audioManager.ringerMode) }
     var interruptionFilter by remember { mutableIntStateOf(notificationManager.currentInterruptionFilter) }
