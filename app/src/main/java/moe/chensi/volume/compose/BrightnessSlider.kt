@@ -93,7 +93,7 @@ fun BrightnessSlider(
                 )
                 StreamSliderTextContent(
                     name = stringResource(R.string.brightness),
-                    valueText = "${brightnessPercent.roundToInt()}/${BRIGHTNESS_SLIDER_MAX.roundToInt()}"
+                    valueText = "${brightnessPercent.roundToInt()}/100"
                 )
             }
         }
