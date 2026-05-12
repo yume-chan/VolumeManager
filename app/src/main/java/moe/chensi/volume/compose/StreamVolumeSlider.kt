@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.weight
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -126,22 +127,26 @@ fun StreamVolumeSlider(
                     contentDescription = name,
                     modifier = Modifier.size(32.dp),
                 )
-
-                Text(
-                    text = name,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Text(
-                    text = "$volume/${maxVolume.toInt()}",
-                    style = Typography.bodySmall,
-                    maxLines = 1,
-                )
+                StreamSliderValueLabel(name = name, valueText = "$volume/${maxVolume.toInt()}")
             }
         }
 
         footer?.invoke()
     }
+}
+
+@Composable
+internal fun StreamSliderValueLabel(name: String, valueText: String) {
+    Text(
+        text = name,
+        modifier = Modifier.weight(1f),
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis
+    )
+
+    Text(
+        text = valueText,
+        style = Typography.bodySmall,
+        maxLines = 1,
+    )
 }
