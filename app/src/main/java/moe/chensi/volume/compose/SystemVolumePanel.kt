@@ -79,15 +79,15 @@ fun SystemVolumePanel(
 
     DisposableEffect(audioManager, showCallVolumeAlways) {
         if (showCallVolumeAlways) {
-            onDispose { }
-        } else {
-            val listener = AudioManager.OnModeChangedListener { mode ->
-                inCallMode = isCallMode(mode)
-            }
-            audioManager.addOnModeChangedListener(executor, listener)
-            onDispose {
-                audioManager.removeOnModeChangedListener(listener)
-            }
+            return@DisposableEffect onDispose { }
+        }
+
+        val listener = AudioManager.OnModeChangedListener { mode ->
+            inCallMode = isCallMode(mode)
+        }
+        audioManager.addOnModeChangedListener(executor, listener)
+        onDispose {
+            audioManager.removeOnModeChangedListener(listener)
         }
     }
 
@@ -288,7 +288,7 @@ private fun SliderVisibilityFooter(
         return
     }
 
-    Row(horizontalArrangement = Arrangement.End, modifier = Modifier) {
+    Row(horizontalArrangement = Arrangement.End) {
         SliderVisibilityToggle(
             sliderId = sliderId,
             sliderName = sliderName,
