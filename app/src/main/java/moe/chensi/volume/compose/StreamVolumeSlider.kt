@@ -127,7 +127,7 @@ fun StreamVolumeSlider(
                     contentDescription = name,
                     modifier = Modifier.size(32.dp),
                 )
-                StreamSliderValueLabel(name = name, valueText = "$volume/${maxVolume.toInt()}")
+                StreamSliderTextContent(name = name, valueText = "$volume/${maxVolume.toInt()}")
             }
         }
 
@@ -136,7 +136,7 @@ fun StreamVolumeSlider(
 }
 
 @Composable
-internal fun StreamSliderValueLabel(name: String, valueText: String) {
+internal fun StreamSliderTextContent(name: String, valueText: String) {
     Text(
         text = name,
         modifier = Modifier.weight(1f),

@@ -286,6 +286,6 @@ private fun StreamSliderLabelRow(icon: ImageVector, name: String, value: Int, ma
             contentDescription = name,
             modifier = Modifier.size(32.dp),
         )
-        StreamSliderValueLabel(name = name, valueText = "$value/$max")
+        StreamSliderTextContent(name = name, valueText = "$value/$max")
     }
 }
