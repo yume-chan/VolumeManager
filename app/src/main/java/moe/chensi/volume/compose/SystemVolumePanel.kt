@@ -45,6 +45,7 @@ import androidx.core.content.ContextCompat
 import moe.chensi.volume.R
 import moe.chensi.volume.system.DisplayManagerProxy
 import moe.chensi.volume.system.NotificationManagerProxy
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 object SystemSliderIds {
@@ -370,7 +371,7 @@ private fun BrightnessSlider(
         value = brightness,
         valueRange = 0f..maxBrightness,
         onValueChange = { value ->
-            if (brightness == value) {
+            if (abs(brightness - value) < 0.001f) {
                 return@TrackSlider
             }
             brightness = value
