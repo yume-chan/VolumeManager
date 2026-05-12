@@ -5,18 +5,12 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.database.ContentObserver
 import android.media.AudioManager
-import android.os.Handler
-import android.os.Looper
-import android.provider.Settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Alarm
-import androidx.compose.material.icons.filled.Brightness6
 import androidx.compose.material.icons.filled.DoNotDisturbOn
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.NotificationsNone
@@ -31,7 +25,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,8 +38,6 @@ import androidx.core.content.ContextCompat
 import moe.chensi.volume.R
 import moe.chensi.volume.system.DisplayManagerProxy
 import moe.chensi.volume.system.NotificationManagerProxy
-import kotlin.math.abs
-import kotlin.math.roundToInt
 
 object SystemSliderIds {
     const val Media = "media"
@@ -56,8 +47,6 @@ object SystemSliderIds {
     const val Notification = "notification"
     const val Brightness = "brightness"
 }
-
-private const val BRIGHTNESS_CHANGE_TOLERANCE = 0.001f
 
 private fun isCallMode(mode: Int): Boolean {
     return mode == AudioManager.MODE_IN_CALL || mode == AudioManager.MODE_IN_COMMUNICATION
@@ -196,9 +185,15 @@ fun SystemVolumePanel(
         if (!applyVisibilityFilter || isSliderVisible(SystemSliderIds.Brightness)) {
             BrightnessSlider(
                 displayManagerProxy = displayManagerProxy,
-                sliderVisible = isSliderVisible(SystemSliderIds.Brightness),
-                allowVisibilityConfig = allowVisibilityConfig,
-                onSliderVisibilityChange = onSliderVisibilityChange,
+                footer = {
+                    SliderVisibilityToggle(
+                        sliderId = SystemSliderIds.Brightness,
+                        sliderName = stringResource(R.string.brightness),
+                        allowVisibilityConfig = allowVisibilityConfig,
+                        isVisible = isSliderVisible(SystemSliderIds.Brightness),
+                        onSliderVisibilityChange = onSliderVisibilityChange
+                    )
+                },
                 onChange = onChange
             )
         }
@@ -291,15 +286,13 @@ private fun SliderVisibilityFooter(
         return
     }
 
-    Row(horizontalArrangement = Arrangement.End) {
-        SliderVisibilityToggle(
-            sliderId = sliderId,
-            sliderName = sliderName,
-            allowVisibilityConfig = allowVisibilityConfig,
-            isVisible = isVisible,
-            onSliderVisibilityChange = onSliderVisibilityChange
-        )
-    }
+    SliderVisibilityToggle(
+        sliderId = sliderId,
+        sliderName = sliderName,
+        allowVisibilityConfig = allowVisibilityConfig,
+        isVisible = isVisible,
+        onSliderVisibilityChange = onSliderVisibilityChange
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -324,84 +317,4 @@ private fun SliderVisibilityToggle(
     ) {
         onSliderVisibilityChange(sliderId, it)
     }
-}
-
-@Composable
-private fun BrightnessSlider(
-    displayManagerProxy: DisplayManagerProxy,
-    sliderVisible: Boolean,
-    allowVisibilityConfig: Boolean,
-    onSliderVisibilityChange: (String, Boolean) -> Unit,
-    onChange: (() -> Unit)? = null
-) {
-    val context = LocalContext.current
-    val contentResolver = context.contentResolver
-
-    fun readBrightness(): Float {
-        return displayManagerProxy.getDefaultDisplayBrightness()
-    }
-
-    fun readMaxBrightness(): Float {
-        return displayManagerProxy.getDefaultDisplayMaxBrightness().coerceAtLeast(1f)
-    }
-
-    var maxBrightness by remember { mutableFloatStateOf(readMaxBrightness()) }
-    var brightness by remember { mutableFloatStateOf(readBrightness()) }
-    val mainThreadHandler = remember { Handler(Looper.getMainLooper()) }
-
-    DisposableEffect(contentResolver) {
-        val observer = object : ContentObserver(mainThreadHandler) {
-            override fun onChange(selfChange: Boolean) {
-                maxBrightness = readMaxBrightness()
-                brightness = readBrightness()
-            }
-        }
-
-        contentResolver.registerContentObserver(
-            Settings.System.getUriFor(Settings.System.SCREEN_BRIGHTNESS),
-            false,
-            observer
-        )
-
-        onDispose {
-            contentResolver.unregisterContentObserver(observer)
-        }
-    }
-
-    TrackSlider(
-        cornerRadius = 20.dp,
-        value = brightness,
-        valueRange = 0f..maxBrightness,
-        onValueChange = { value ->
-            if (abs(brightness - value) < BRIGHTNESS_CHANGE_TOLERANCE) {
-                return@TrackSlider
-            }
-            brightness = value
-            displayManagerProxy.setDefaultDisplayBrightness(value)
-            onChange?.invoke()
-        }
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = Icons.Default.Brightness6,
-                contentDescription = stringResource(R.string.brightness),
-                modifier = Modifier.size(32.dp),
-            )
-            StreamSliderTextContent(
-                name = stringResource(R.string.brightness),
-                valueText = "${brightness.roundToInt()}/${maxBrightness.roundToInt()}"
-            )
-        }
-    }
-
-    SliderVisibilityFooter(
-        sliderId = SystemSliderIds.Brightness,
-        sliderName = stringResource(R.string.brightness),
-        allowVisibilityConfig = allowVisibilityConfig,
-        isVisible = sliderVisible,
-        onSliderVisibilityChange = onSliderVisibilityChange
-    )
 }

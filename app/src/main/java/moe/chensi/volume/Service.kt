@@ -207,7 +207,7 @@ class Service : AccessibilityService() {
                                         displayManagerProxy = manager.displayManagerProxy,
                                         showCallVolumeAlways = false,
                                         applyVisibilityFilter = true,
-                                        allowVisibilityConfig = true,
+                                        allowVisibilityConfig = false,
                                         isSliderVisible = manager::isSystemSliderVisible,
                                         onSliderVisibilityChange = manager::setSystemSliderVisible,
                                         onChange = this@Service.handler::startIdleTimer

@@ -2,6 +2,7 @@ package moe.chensi.volume.system
 
 import android.content.Context
 import android.hardware.display.DisplayManager
+import android.os.Handler
 import android.view.Display
 import moe.chensi.volume.EnableBinderProxy
 import moe.chensi.volume.ToggleableBinderProxy
@@ -35,12 +36,17 @@ class DisplayManagerProxy private constructor(context: Context) {
     }
 
     @EnableBinderProxy
-    fun getDefaultDisplayMaxBrightness(): Float {
-        return displayManager.getBrightnessInfo(Display.DEFAULT_DISPLAY)?.brightnessMaximum ?: 1f
+    fun setDefaultDisplayBrightness(value: Float) {
+        displayManagerReflect.call("setBrightness", Display.DEFAULT_DISPLAY, value)
     }
 
     @EnableBinderProxy
-    fun setDefaultDisplayBrightness(value: Float) {
-        displayManagerReflect.call("setBrightness", Display.DEFAULT_DISPLAY, value)
+    fun registerDisplayListener(listener: DisplayManager.DisplayListener, handler: Handler?) {
+        displayManager.registerDisplayListener(listener, handler)
+    }
+
+    @EnableBinderProxy
+    fun unregisterDisplayListener(listener: DisplayManager.DisplayListener) {
+        displayManager.unregisterDisplayListener(listener)
     }
 }
