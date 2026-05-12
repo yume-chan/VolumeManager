@@ -23,7 +23,7 @@ class AppPreferencesStore(private val dataStore: DataStore<Preferences>) {
     private data class SerializedState(
         val values: MutableList<AppPreferences>,
         val indices: MutableMap<String, Int>,
-        val showSystemSlidersInPopup: Boolean = true
+        val systemSliderVisibility: MutableMap<String, Boolean> = mutableMapOf()
     )
 
     private val lock = Any()
@@ -32,15 +32,37 @@ class AppPreferencesStore(private val dataStore: DataStore<Preferences>) {
         get() = state.values
     val indices: Map<String, Int>
         get() = synchronized(lock) { state.indices.toMap() }
-    var showSystemSlidersInPopup: Boolean
-        get() = synchronized(lock) { state.showSystemSlidersInPopup }
+    fun getSystemSliderVisible(id: String): Boolean {
+        return synchronized(lock) { state.systemSliderVisibility[id] ?: true }
+    }
+
+    fun setSystemSliderVisible(id: String, value: Boolean) {
+        val changed = synchronized(lock) {
+            val oldValue = state.systemSliderVisibility[id] ?: true
+            if (oldValue == value) {
+                return@synchronized false
+            }
+
+            val updated = state.systemSliderVisibility.toMutableMap()
+            updated[id] = value
+            state = state.copy(systemSliderVisibility = updated)
+            true
+        }
+
+        if (changed) {
+            save()
+        }
+    }
+
+    var systemSliderVisibility: Map<String, Boolean>
+        get() = synchronized(lock) { state.systemSliderVisibility.toMap() }
         set(value) {
             val changed = synchronized(lock) {
-                if (state.showSystemSlidersInPopup == value) {
+                if (state.systemSliderVisibility == value) {
                     return@synchronized false
                 }
 
-                state = state.copy(showSystemSlidersInPopup = value)
+                state = state.copy(systemSliderVisibility = value.toMutableMap())
                 true
             }
 

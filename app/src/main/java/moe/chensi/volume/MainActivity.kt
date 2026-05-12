@@ -332,10 +332,13 @@ class MainActivity : ComponentActivity() {
                                         item("system_volume_panel_main") {
                                             SystemVolumePanel(
                                                 audioManager = manager.audioManager,
+                                                notificationManagerProxy = manager.notificationManagerProxy,
+                                                displayManagerProxy = manager.displayManagerProxy,
                                                 showCallVolumeAlways = true,
-                                                showHideButton = false,
-                                                showSliders = true,
-                                                onShowSlidersChange = { },
+                                                applyVisibilityFilter = false,
+                                                allowVisibilityConfig = true,
+                                                isSliderVisible = manager::isSystemSliderVisible,
+                                                onSliderVisibilityChange = manager::setSystemSliderVisible,
                                             )
                                         }
                                     })

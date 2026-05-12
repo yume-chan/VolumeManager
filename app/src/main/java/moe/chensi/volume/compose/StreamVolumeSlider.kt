@@ -9,6 +9,7 @@ import android.media.AudioManager
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.weight
@@ -112,8 +113,13 @@ fun StreamVolumeSlider(
             value = volume.toFloat(),
             valueRange = 0f..maxVolume,
             onValueChange = { value ->
-                volume = value.toInt()
-                audioManager.setStreamVolume(streamType, value.toInt(), 0)
+                val target = value.toInt()
+                if (volume == target) {
+                    return@TrackSlider
+                }
+
+                volume = target
+                audioManager.setStreamVolume(streamType, target, 0)
                 onChange?.invoke()
             },
         ) {
@@ -136,7 +142,7 @@ fun StreamVolumeSlider(
 }
 
 @Composable
-internal fun StreamSliderTextContent(name: String, valueText: String) {
+internal fun RowScope.StreamSliderTextContent(name: String, valueText: String) {
     Text(
         text = name,
         modifier = Modifier.weight(1f),

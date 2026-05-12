@@ -15,6 +15,8 @@ import androidx.datastore.preferences.core.Preferences
 import moe.chensi.volume.data.App
 import moe.chensi.volume.data.AppPreferencesStore
 import moe.chensi.volume.system.AudioPlaybackConfigurationProxy
+import moe.chensi.volume.system.DisplayManagerProxy
+import moe.chensi.volume.system.NotificationManagerProxy
 import moe.chensi.volume.system.PackageManagerProxy
 import org.joor.Reflect
 import rikka.shizuku.Shizuku
@@ -44,19 +46,26 @@ class Manager(context: Context, dataStore: DataStore<Preferences>) {
             .apply { ToggleableBinderProxy.wrap(this) }
     }
     private val packageManager by lazy { PackageManagerProxy.get(context) }
+    val notificationManagerProxy = NotificationManagerProxy(context)
+    val displayManagerProxy = DisplayManagerProxy(context)
 
     private val appPreferencesStore = AppPreferencesStore(dataStore)
-    private var _showSystemSlidersInPopup by mutableStateOf(appPreferencesStore.showSystemSlidersInPopup)
-    var showSystemSlidersInPopup: Boolean
-        get() = _showSystemSlidersInPopup
-        set(value) {
-            if (_showSystemSlidersInPopup == value) {
-                return
-            }
+    private val _systemSliderVisibility = mutableStateMapOf<String, Boolean>()
+    val systemSliderVisibility: Map<String, Boolean>
+        get() = _systemSliderVisibility
 
-            _showSystemSlidersInPopup = value
-            appPreferencesStore.showSystemSlidersInPopup = value
+    fun isSystemSliderVisible(id: String): Boolean {
+        return _systemSliderVisibility[id] ?: true
+    }
+
+    fun setSystemSliderVisible(id: String, visible: Boolean) {
+        if ((_systemSliderVisibility[id] ?: true) == visible) {
+            return
         }
+
+        _systemSliderVisibility[id] = visible
+        appPreferencesStore.setSystemSliderVisible(id, visible)
+    }
 
     val apps = mutableStateMapOf<String, App>()
 
@@ -173,7 +182,8 @@ class Manager(context: Context, dataStore: DataStore<Preferences>) {
                 }
             }
 
-            _showSystemSlidersInPopup = appPreferencesStore.showSystemSlidersInPopup
+            _systemSliderVisibility.clear()
+            _systemSliderVisibility.putAll(appPreferencesStore.systemSliderVisibility)
 
             if (first) {
                 initialize()

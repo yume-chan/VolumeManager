@@ -202,11 +202,14 @@ class Service : AccessibilityService() {
                             ) {
                                 item("system_volume_panel") {
                                     SystemVolumePanel(
-                                        manager.audioManager,
+                                        audioManager = manager.audioManager,
+                                        notificationManagerProxy = manager.notificationManagerProxy,
+                                        displayManagerProxy = manager.displayManagerProxy,
                                         showCallVolumeAlways = false,
-                                        showHideButton = true,
-                                        showSliders = manager.showSystemSlidersInPopup,
-                                        onShowSlidersChange = { manager.showSystemSlidersInPopup = it },
+                                        applyVisibilityFilter = true,
+                                        allowVisibilityConfig = true,
+                                        isSliderVisible = manager::isSystemSliderVisible,
+                                        onSliderVisibilityChange = manager::setSystemSliderVisible,
                                         onChange = this@Service.handler::startIdleTimer
                                     )
                                 }

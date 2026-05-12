@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -154,7 +153,9 @@ fun AppVolumeList(
             } else if (showEmpty) {
                 item {
                     Column(
-                        modifier = Modifier.fillParentMaxSize(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 48.dp),
                         verticalArrangement = Arrangement.spacedBy(
                             12.dp, Alignment.CenterVertically
                         ),
