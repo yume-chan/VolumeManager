@@ -1,13 +1,16 @@
 package moe.chensi.volume.compose
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -42,17 +45,36 @@ fun AboutDialog(
             },
             text = {
                 Column {
-                    Text(
-                        text = stringResource(R.string.about_version, BuildConfig.VERSION_NAME),
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.about_version, BuildConfig.VERSION_NAME),
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.alignByBaseline()
+                        )
+                        TextButton(
+                            onClick = {
+                                val clipboard = context.getSystemService(ClipboardManager::class.java)
+                                val clip =
+                                    ClipData.newPlainText("VolumeManager", BuildConfig.VERSION_NAME)
+                                clipboard.setPrimaryClip(clip)
+                                Toast.makeText(context, "Copied", Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier.alignByBaseline()
+                        ) {
+                            Text("Copy")
+                        }
+                    }
                     Text(
                         text = stringResource(R.string.about_author, "yume-chan"),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                }
+            },
+            confirmButton = {
+                Column {
                     Button(
                         onClick = {
                             val intent = Intent(
@@ -66,14 +88,12 @@ fun AboutDialog(
                     ) {
                         Text(text = stringResource(R.string.about_github))
                     }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(stringResource(R.string.close))
+                    TextButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.close))
+                    }
                 }
             }
         )
