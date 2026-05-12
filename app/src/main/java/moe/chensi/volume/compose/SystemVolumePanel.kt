@@ -50,6 +50,9 @@ import moe.chensi.volume.R
 import moe.chensi.volume.ui.theme.Typography
 import kotlinx.coroutines.delay
 
+private const val CALL_MODE_POLL_INTERVAL_MS = 500L
+private const val DEFAULT_BRIGHTNESS = 127
+
 private fun isCallMode(mode: Int): Boolean {
     return mode == AudioManager.MODE_IN_CALL || mode == AudioManager.MODE_IN_COMMUNICATION
 }
@@ -70,7 +73,7 @@ fun SystemVolumePanel(
         if (!showCallVolumeAlways) {
             while (true) {
                 inCallMode = isCallMode(audioManager.mode)
-                delay(500)
+                delay(CALL_MODE_POLL_INTERVAL_MS)
             }
         }
     }
@@ -224,7 +227,7 @@ private fun BrightnessSlider(onChange: (() -> Unit)? = null) {
         return try {
             Settings.System.getInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS)
         } catch (_: Settings.SettingNotFoundException) {
-            127
+            DEFAULT_BRIGHTNESS
         }
     }
 
