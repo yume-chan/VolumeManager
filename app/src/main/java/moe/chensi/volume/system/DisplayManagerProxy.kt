@@ -28,6 +28,8 @@ class DisplayManagerProxy private constructor(context: Context) {
         Reflect.onClass("android.hardware.display.DisplayManagerGlobal").call("getInstance")
     private val displayManagerReflect = Reflect.on(displayManager)
 
+    private val brightnessUtils = BrightnessUtils(context)
+
     init {
         val service = displayManagerGlobalReflect.get<Any>("mDm")
         ToggleableBinderProxy.wrap(service)
@@ -74,7 +76,7 @@ class DisplayManagerProxy private constructor(context: Context) {
             "getDefaultDisplayBrightnessPercentage: ${brightnessInfo.brightness} ${brightnessInfo.brightnessMinimum} ${brightnessInfo.brightnessMaximum}"
         )
 
-        val gamma = BrightnessUtils.convertLinearToGammaPercentage(
+        val gamma = brightnessUtils.convertLinearToGammaPercentage(
             brightnessInfo.brightness,
             brightnessInfo.brightnessMinimum,
             brightnessInfo.brightnessMaximum
@@ -97,7 +99,7 @@ class DisplayManagerProxy private constructor(context: Context) {
 
         val brightnessInfo = getDefaultDisplayBrightnessInfo() ?: return
 
-        val brightness = BrightnessUtils.convertGammaPercentageToLinear(
+        val brightness = brightnessUtils.convertGammaPercentageToLinear(
             value, brightnessInfo.brightnessMinimum, brightnessInfo.brightnessMaximum
         )
         Log.d("DisplayManagerProxy", "setDefaultDisplayBrightnessPercentage: $brightness")
