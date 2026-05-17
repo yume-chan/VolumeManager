@@ -28,6 +28,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -157,8 +158,7 @@ class Service : AccessibilityService() {
 
                 Log.i(TAG, "onAttachedToWindow manufacturer: ${Build.MANUFACTURER}")
 
-                @Suppress("SpellCheckingInspection")
-                if (windowManager.isCrossWindowBlurEnabled && isHardwareAccelerated && Build.MANUFACTURER != "realme") {
+                @Suppress("SpellCheckingInspection") if (windowManager.isCrossWindowBlurEnabled && isHardwareAccelerated && Build.MANUFACTURER != "realme") {
                     background =
                         Reflect.on(rootSurfaceControl).call("createBackgroundBlurDrawable").apply {
                             call("setBlurRadius", 200)
@@ -185,15 +185,12 @@ class Service : AccessibilityService() {
             override fun Content() {
                 return VolumeManagerTheme {
                     Surface(
-                        color = Color.Transparent,
-                        contentColor = Color.White,
+                        color = Color(1f, 1f, 1f, 0.3f),
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                        shape = RoundedCornerShape(40f)
                     ) {
                         Column(
-                            modifier = Modifier
-                                .background(
-                                    Color(1f, 1f, 1f, 0.3f), RoundedCornerShape(40f)
-                                )
-                                .padding(20.dp, 16.dp)
+                            modifier = Modifier.padding(20.dp, 16.dp)
                         ) {
                             AppVolumeList(
                                 apps = manager.apps.values,

@@ -128,7 +128,7 @@ fun StreamVolumeSlider(
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(12.dp, 8.dp)
+                modifier = Modifier.padding(16.dp, 8.dp)
             ) {
                 Icon(
                     imageVector = icon,

@@ -334,8 +334,8 @@ class MainActivity : ComponentActivity() {
                                                 audioManager = manager.audioManager,
                                                 notificationManagerProxy = manager.notificationManagerProxy,
                                                 showCallVolumeAlways = true,
-                                                applyVisibilityFilter = false,
-                                                allowVisibilityConfig = true,
+                                                applyVisibilityFilter = !showAll,
+                                                allowVisibilityConfig = showAll,
                                                 isSliderVisible = manager::isSystemSliderVisible,
                                                 onSliderVisibilityChange = manager::setSystemSliderVisible,
                                             )
