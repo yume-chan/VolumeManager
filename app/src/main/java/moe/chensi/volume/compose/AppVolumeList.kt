@@ -146,8 +146,11 @@ fun AppVolumeList(
         content?.invoke(this)
 
         if (!showAll) {
-            if (activePlayers.isNotEmpty()) {
-                items(items = activePlayers, key = { app -> app.packageName }) { app ->
+            // Keep compact mode stable for accessibility by showing known players even when idle.
+            val compactPlayers = (activePlayers + inactivePlayers).sortedWith(App.comparator)
+
+            if (compactPlayers.isNotEmpty()) {
+                items(items = compactPlayers, key = { app -> app.packageName }) { app ->
                     AppVolumeSlider(app, showOptions = false, onChange = onChange)
                 }
             } else if (showEmpty) {

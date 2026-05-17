@@ -19,6 +19,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import moe.chensi.volume.data.App
@@ -37,7 +40,12 @@ fun AppVolumeSlider(
         verticalAlignment = Alignment.CenterVertically
     ) {
         TrackSlider(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .semantics {
+                    contentDescription = app.name
+                    stateDescription = "${(app.volume * 100).roundToInt()}%"
+                },
             cornerRadius = 20.dp,
             value = app.volume,
             onValueChange = { value ->
