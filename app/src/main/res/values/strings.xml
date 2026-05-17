@@ -18,13 +18,10 @@
     <string name="stream_call">Call</string>
     <string name="stream_alarm">Alarm</string>
     <string name="stream_notification">Notification</string>
-    <string name="brightness">Brightness</string>
     <string name="show_slider">Show %1$s slider</string>
     <string name="hide_slider">Hide %1$s slider</string>
     <string name="enable_vibrate_mode">Enable vibrate mode</string>
     <string name="disable_vibrate_mode">Disable vibrate mode</string>
     <string name="enable_do_not_disturb">Enable Do Not Disturb</string>
     <string name="disable_do_not_disturb">Disable Do Not Disturb</string>
-    <string name="enable_auto_brightness">Enable auto brightness</string>
-    <string name="disable_auto_brightness">Disable auto brightness</string>
 </resources>

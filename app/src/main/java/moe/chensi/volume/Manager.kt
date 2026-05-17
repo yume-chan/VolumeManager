@@ -15,7 +15,6 @@ import androidx.datastore.preferences.core.Preferences
 import moe.chensi.volume.data.App
 import moe.chensi.volume.data.AppPreferencesStore
 import moe.chensi.volume.system.AudioPlaybackConfigurationProxy
-import moe.chensi.volume.system.DisplayManagerProxy
 import moe.chensi.volume.system.NotificationManagerProxy
 import moe.chensi.volume.system.PackageManagerProxy
 import org.joor.Reflect
@@ -47,7 +46,6 @@ class Manager(context: Context, dataStore: DataStore<Preferences>) {
     }
     private val packageManager by lazy { PackageManagerProxy.get(context) }
     val notificationManagerProxy = NotificationManagerProxy(context)
-    val displayManagerProxy = DisplayManagerProxy(context)
 
     private val appPreferencesStore = AppPreferencesStore(dataStore)
     private val _systemSliderVisibility = mutableStateMapOf<String, Boolean>()

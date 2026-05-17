@@ -36,7 +36,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import moe.chensi.volume.R
-import moe.chensi.volume.system.DisplayManagerProxy
 import moe.chensi.volume.system.NotificationManagerProxy
 
 object SystemSliderIds {
@@ -45,7 +44,6 @@ object SystemSliderIds {
     const val Call = "call"
     const val Alarm = "alarm"
     const val Notification = "notification"
-    const val Brightness = "brightness"
 }
 
 private fun isCallMode(mode: Int): Boolean {
@@ -57,7 +55,6 @@ private fun isCallMode(mode: Int): Boolean {
 fun SystemVolumePanel(
     audioManager: AudioManager,
     notificationManagerProxy: NotificationManagerProxy,
-    displayManagerProxy: DisplayManagerProxy,
     showCallVolumeAlways: Boolean,
     applyVisibilityFilter: Boolean,
     allowVisibilityConfig: Boolean,
@@ -182,21 +179,6 @@ fun SystemVolumePanel(
             )
         }
 
-        if (!applyVisibilityFilter || isSliderVisible(SystemSliderIds.Brightness)) {
-            BrightnessSlider(
-                displayManagerProxy = displayManagerProxy,
-                footer = {
-                    SliderVisibilityToggle(
-                        sliderId = SystemSliderIds.Brightness,
-                        sliderName = stringResource(R.string.brightness),
-                        allowVisibilityConfig = allowVisibilityConfig,
-                        isVisible = isSliderVisible(SystemSliderIds.Brightness),
-                        onSliderVisibilityChange = onSliderVisibilityChange
-                    )
-                },
-                onChange = onChange
-            )
-        }
     }
 }
 

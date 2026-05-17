@@ -333,7 +333,6 @@ class MainActivity : ComponentActivity() {
                                             SystemVolumePanel(
                                                 audioManager = manager.audioManager,
                                                 notificationManagerProxy = manager.notificationManagerProxy,
-                                                displayManagerProxy = manager.displayManagerProxy,
                                                 showCallVolumeAlways = true,
                                                 applyVisibilityFilter = false,
                                                 allowVisibilityConfig = true,

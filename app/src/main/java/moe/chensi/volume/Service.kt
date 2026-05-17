@@ -204,7 +204,6 @@ class Service : AccessibilityService() {
                                     SystemVolumePanel(
                                         audioManager = manager.audioManager,
                                         notificationManagerProxy = manager.notificationManagerProxy,
-                                        displayManagerProxy = manager.displayManagerProxy,
                                         showCallVolumeAlways = false,
                                         applyVisibilityFilter = true,
                                         allowVisibilityConfig = false,

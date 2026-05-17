@@ -19,13 +19,10 @@
     <string name="stream_call">通话</string>
     <string name="stream_alarm">闹钟</string>
     <string name="stream_notification">通知</string>
-    <string name="brightness">亮度</string>
     <string name="show_slider">显示%1$s滑块</string>
     <string name="hide_slider">隐藏%1$s滑块</string>
     <string name="enable_vibrate_mode">开启振动模式</string>
     <string name="disable_vibrate_mode">关闭振动模式</string>
     <string name="enable_do_not_disturb">开启勿扰模式</string>
     <string name="disable_do_not_disturb">关闭勿扰模式</string>
-    <string name="enable_auto_brightness">开启自动亮度</string>
-    <string name="disable_auto_brightness">关闭自动亮度</string>
 </resources>
