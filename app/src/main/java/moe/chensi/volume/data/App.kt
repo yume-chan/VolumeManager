@@ -9,15 +9,19 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.drawable.toBitmap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import moe.chensi.volume.system.AudioPlaybackConfigurationProxy
 import moe.chensi.volume.system.PackageManagerProxy
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicLong
 
 data class App(
     val packageManager: PackageManagerProxy,
@@ -27,6 +31,8 @@ data class App(
     private val savePreferences: () -> Unit
 ) {
     companion object {
+        private const val HAS_BEEN_PLAYING_RECENTLY_TIMEOUT_MILLIS = 10_000L
+
         val collator: Collator by lazy {
             Collator.getInstance().apply {
                 strength = Collator.PRIMARY
@@ -184,8 +190,43 @@ data class App(
             savePreferences()
         }
 
-    var isPlaying by mutableStateOf(false)
-        private set
+    private var _isPlaying by mutableStateOf(false)
+    var isPlaying: Boolean
+        get() = _isPlaying
+        private set(value) {
+            if (value == _isPlaying) {
+                return
+            }
+
+            _isPlaying = value
+            val version = hasBeenPlayingRecentlyVersion.incrementAndGet()
+
+            if (value) {
+                Snapshot.withMutableSnapshot {
+                    _hasBeenPlayingRecently = true
+                }
+                hasBeenPlayingRecentlyResetJob?.cancel()
+                hasBeenPlayingRecentlyResetJob = null
+            } else {
+                hasBeenPlayingRecentlyResetJob?.cancel()
+                hasBeenPlayingRecentlyResetJob = scope.launch {
+                    delay(HAS_BEEN_PLAYING_RECENTLY_TIMEOUT_MILLIS)
+                    if (hasBeenPlayingRecentlyVersion.get() == version) {
+                        Snapshot.withMutableSnapshot {
+                            _hasBeenPlayingRecently = false
+                        }
+                    }
+                }
+            }
+        }
+
+    private val hasBeenPlayingRecentlyVersion = AtomicLong(0)
+    @Volatile
+    private var hasBeenPlayingRecentlyResetJob: Job? = null
+
+    private var _hasBeenPlayingRecently by mutableStateOf(false)
+    val hasBeenPlayingRecently: Boolean
+        get() = _hasBeenPlayingRecently
 
     private var _volume by mutableFloatStateOf(preferences.volume)
     var volume

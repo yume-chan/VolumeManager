@@ -146,8 +146,10 @@ fun AppVolumeList(
         content?.invoke(this)
 
         if (!showAll) {
-            // Keep compact mode stable for accessibility by showing known players even when idle.
-            val compactPlayers = (activePlayers + inactivePlayers).sortedWith(App.comparator)
+            // Keep recently active apps visible for a short decay window to avoid TalkBack focus jumps.
+            val compactPlayers = apps
+                .filter { app -> app.isPlayer && !app.hidden && app.hasBeenPlayingRecently }
+                .sortedWith(App.comparator)
 
             if (compactPlayers.isNotEmpty()) {
                 items(items = compactPlayers, key = { app -> app.packageName }) { app ->
