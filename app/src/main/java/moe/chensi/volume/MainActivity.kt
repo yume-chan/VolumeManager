@@ -25,9 +25,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -198,10 +198,10 @@ class MainActivity : ComponentActivity() {
                             if (manager.shizukuStatus == Manager.ShizukuStatus.Connected) {
                                 ToggleButton(
                                     checked = showAll,
-                                    checkedIcon = Icons.Default.Visibility,
-                                    checkedDescription = "Hide inactive or hidden apps",
-                                    uncheckedIcon = Icons.Default.VisibilityOff,
-                                    uncheckedDescription = "Show all apps"
+                                    checkedIcon = Icons.Default.Check,
+                                    checkedDescription = "Save",
+                                    uncheckedIcon = Icons.Default.Settings,
+                                    uncheckedDescription = "Settings"
                                 ) {
                                     showAll = it
                                 }
@@ -370,14 +370,11 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun ServiceStatus() {
-        var permissionGranted by remember { mutableStateOf(false) }
-        var serviceEnabled by remember { mutableStateOf(false) }
         var errorInfo by remember { mutableStateOf<ErrorInfo?>(null) }
 
         LaunchedEffect(0) {
             try {
                 grantSelfPermission(android.Manifest.permission.WRITE_SECURE_SETTINGS)
-                permissionGranted = true
             } catch (e: Exception) {
                 Log.e(TAG, "Can't add WRITE_SECURE_SETTINGS permission", e)
                 errorInfo = ErrorInfo(e.message!!, e.stackTraceToString())
@@ -388,7 +385,6 @@ class MainActivity : ComponentActivity() {
                 enableAccessibilityService(
                     ComponentName(this@MainActivity, Service::class.java).flattenToString()
                 )
-                serviceEnabled = true
             } catch (e: Exception) {
                 Log.e(TAG, "Can't enable accessibility service", e)
             }
@@ -416,11 +412,6 @@ class MainActivity : ComponentActivity() {
                         Text("Copy full message")
                     }
                 })
-        }
-
-        Column {
-            Text(text = "Permission granted: ${if (permissionGranted) "Yes" else "No"}")
-            Text(text = "Service enabled: ${if (serviceEnabled) "Yes" else "No"}")
         }
 
         Log.i(TAG, "Manufacturer: ${Build.MANUFACTURER}")
