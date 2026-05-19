@@ -90,7 +90,6 @@ fun AppVolumeList(
 
     val activePlayers = mutableListOf<App>()
     val inactivePlayers = mutableListOf<App>()
-    val compactPlayers = mutableListOf<App>()
     val hiddenPlayers = mutableListOf<App>()
     val otherAppsWithActivities = mutableListOf<App>()
     val otherAppsWithoutActivities = mutableListOf<App>()
@@ -99,10 +98,6 @@ fun AppVolumeList(
         if (app.isPlayer) {
             if (!app.hidden) {
                 if (app.hasBeenPlayingRecently) {
-                    compactPlayers.add(app)
-                }
-
-                if (app.isPlaying) {
                     activePlayers.add(app)
                 } else {
                     inactivePlayers.add(app)
@@ -151,11 +146,8 @@ fun AppVolumeList(
         content?.invoke(this)
 
         if (!showAll) {
-            // Keep recently active apps visible for a short decay window to avoid TalkBack focus jumps.
-            val sortedCompactPlayers = compactPlayers.sortedWith(App.comparator)
-
-            if (sortedCompactPlayers.isNotEmpty()) {
-                items(items = sortedCompactPlayers, key = { app -> app.packageName }) { app ->
+            if (activePlayers.isNotEmpty()) {
+                items(items = activePlayers, key = { app -> app.packageName }) { app ->
                     AppVolumeSlider(app, showOptions = false, onChange = onChange)
                 }
             } else if (showEmpty) {
