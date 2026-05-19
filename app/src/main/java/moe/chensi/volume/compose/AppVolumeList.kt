@@ -97,7 +97,7 @@ fun AppVolumeList(
     for (app in apps) {
         if (app.isPlayer) {
             if (!app.hidden) {
-                if (app.isPlaying) {
+                if (app.hasBeenPlayingRecently) {
                     activePlayers.add(app)
                 } else {
                     inactivePlayers.add(app)
