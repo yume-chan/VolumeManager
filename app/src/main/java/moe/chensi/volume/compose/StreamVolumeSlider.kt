@@ -121,7 +121,11 @@ fun StreamVolumeSlider(
                 }
 
                 volume = target
-                audioManager.setStreamVolume(streamType, target, 0)
+                try {
+                    audioManager.setStreamVolume(streamType, target, 0)
+                } catch (_: SecurityException) {
+                    return@TrackSlider
+                }
                 onChange?.invoke()
             },
         ) {
