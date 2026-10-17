@@ -2,6 +2,10 @@
 <resources>
     <string name="app_name">AppVolMgr</string>
     <string name="accessibility_service_description">保持 AppVolMgr 在后台运行，通过无障碍按钮或物理音量键快速调整音量</string>
+    <string name="foreground_notification_channel_name">后台服务</string>
+    <string name="foreground_notification_channel_description">在后台运行时保持 AppVolMgr 可用。</string>
+    <string name="foreground_notification_title">AppVolMgr 正在运行</string>
+    <string name="foreground_notification_text">无障碍服务已启用。</string>
     <string name="group_active">正在播放</string>
     <string name="group_inactive">未播放</string>
     <string name="group_hidden">已隐藏</string>
