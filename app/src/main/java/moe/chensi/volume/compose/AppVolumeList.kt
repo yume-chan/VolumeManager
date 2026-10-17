@@ -44,7 +44,8 @@ fun LazyListScope.group(
     apps: List<App>,
     enableHide: Boolean = true,
     onChange: (() -> Unit)? = null,
-    onHeaderClick: (() -> Unit)? = null
+    onHeaderClick: (() -> Unit)? = null,
+    showVolumeButtonToggle: Boolean = true
 ) {
     if (apps.isNotEmpty()) {
         stickyHeader {
@@ -68,7 +69,13 @@ fun LazyListScope.group(
 
         items(
             items = apps.sortedWith(App.comparator), key = { app -> app.packageName }) { app ->
-            AppVolumeSlider(app, true, enableHide, onChange)
+            AppVolumeSlider(
+                app,
+                showOptions = true,
+                enableHide = enableHide,
+                onChange = onChange,
+                showVolumeButtonToggle = showVolumeButtonToggle
+            )
         }
     }
 }
@@ -80,6 +87,7 @@ fun AppVolumeList(
     apps: MutableCollection<App>,
     showEmpty: Boolean = false,
     showAll: Boolean,
+    showVolumeButtonToggle: Boolean = true,
     onChange: (() -> Unit)? = null,
     onShowAll: (() -> Unit)? = null,
     content: (LazyListScope.() -> Unit)? = null
@@ -97,7 +105,7 @@ fun AppVolumeList(
     for (app in apps) {
         if (app.isPlayer) {
             if (!app.hidden) {
-                if (app.isPlaying) {
+                if (app.hasBeenPlayingRecently) {
                     activePlayers.add(app)
                 } else {
                     inactivePlayers.add(app)
@@ -148,7 +156,12 @@ fun AppVolumeList(
         if (!showAll) {
             if (activePlayers.isNotEmpty()) {
                 items(items = activePlayers, key = { app -> app.packageName }) { app ->
-                    AppVolumeSlider(app, showOptions = false, onChange = onChange)
+                    AppVolumeSlider(
+                        app,
+                        showOptions = false,
+                        onChange = onChange,
+                        showVolumeButtonToggle = showVolumeButtonToggle
+                    )
                 }
             } else if (showEmpty) {
                 item {
@@ -173,7 +186,14 @@ fun AppVolumeList(
         }
 
         groups.forEach { group ->
-            group({ group.name }, group.apps, enableHide = group.enableHide, onChange = onChange, onHeaderClick = { selectedGroup = group.name })
+            group(
+                { group.name },
+                group.apps,
+                enableHide = group.enableHide,
+                onChange = onChange,
+                onHeaderClick = { selectedGroup = group.name },
+                showVolumeButtonToggle = showVolumeButtonToggle
+            )
         }
     }
 

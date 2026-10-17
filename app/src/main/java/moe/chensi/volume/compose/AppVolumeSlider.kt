@@ -19,6 +19,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import moe.chensi.volume.data.App
@@ -30,14 +33,23 @@ import kotlin.math.roundToInt
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppVolumeSlider(
-    app: App, showOptions: Boolean, enableHide: Boolean = true, onChange: (() -> Unit)? = null
+    app: App,
+    showOptions: Boolean,
+    enableHide: Boolean = true,
+    onChange: (() -> Unit)? = null,
+    showVolumeButtonToggle: Boolean = true
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         TrackSlider(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .semantics {
+                    contentDescription = app.name
+                    stateDescription = "${(app.volume * 100).roundToInt()}%"
+                },
             cornerRadius = 20.dp,
             value = app.volume,
             onValueChange = { value ->
@@ -92,14 +104,16 @@ fun AppVolumeSlider(
                 }
             }
 
-            ToggleButton(
-                checked = app.disableVolumeButtons,
-                checkedIcon = HookOff,
-                checkedDescription = "Enable volume buttons",
-                uncheckedIcon = Hook,
-                uncheckedDescription = "Disable volume buttons"
-            ) {
-                app.disableVolumeButtons = it
+            if (showVolumeButtonToggle) {
+                ToggleButton(
+                    checked = app.disableVolumeButtons,
+                    checkedIcon = HookOff,
+                    checkedDescription = "Enable volume buttons",
+                    uncheckedIcon = Hook,
+                    uncheckedDescription = "Disable volume buttons"
+                ) {
+                    app.disableVolumeButtons = it
+                }
             }
         }
     }

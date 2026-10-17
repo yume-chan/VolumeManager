@@ -5,6 +5,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.progressSemantics
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -19,6 +20,7 @@ import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -47,6 +49,8 @@ fun TrackSlider(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .semantics(mergeDescendants = true) {}
+            .progressSemantics(value = coercedValue, valueRange = valueRange)
             .clip(GenericShape { size, _ ->
                 addRoundRect(
                     RoundRect(
@@ -107,4 +111,3 @@ fun TrackSlider(
         }
     }
 }
-

@@ -16,13 +16,18 @@ import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Check
@@ -35,6 +40,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TooltipAnchorPosition
@@ -44,6 +51,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,11 +60,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.net.toUri
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import moe.chensi.volume.compose.AboutDialog
 import moe.chensi.volume.compose.AppVolumeList
 import moe.chensi.volume.compose.CrashReportDialog
@@ -66,6 +78,8 @@ import moe.chensi.volume.ui.theme.VolumeManagerTheme
 import org.joor.Reflect
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuRemoteProcess
+import kotlin.math.roundToInt
+import kotlin.time.Duration.Companion.milliseconds
 
 @SuppressLint("PrivateApi", "SoonBlockedPrivateApi")
 class MainActivity : ComponentActivity() {
@@ -150,6 +164,10 @@ class MainActivity : ComponentActivity() {
         checkBatteryOptimization()
 
         setContent {
+            val floatingButtonEnabled by application.floatingButtonEnabled.collectAsState()
+            val floatingButtonSize by application.floatingButtonSize.collectAsState()
+            val systemVolumeButtonHooksEnabled by
+                application.systemVolumeButtonHooksEnabled.collectAsState()
             var showAll by remember { mutableStateOf(false) }
             var crashReport by remember { mutableStateOf<String?>(null) }
             var showAboutDialog by remember { mutableStateOf(false) }
@@ -296,8 +314,26 @@ class MainActivity : ComponentActivity() {
                                 Text("Waiting for Shizuku...")
                                 Text(
                                     textAlign = TextAlign.Center,
-                                    text = "Make sure Shizuku is installed and enabled"
+                                    text = "Make sure Shizuku is enabled"
                                 )
+                                Button(
+                                    onClick = {
+                                        val launchIntent = packageManager.getLaunchIntentForPackage(
+                                            Manager.SHIZUKU_PACKAGE_NAME
+                                        )
+                                        if (launchIntent != null) {
+                                            startActivity(launchIntent)
+                                        } else {
+                                            Toast.makeText(
+                                                this@MainActivity,
+                                                "Unable to open Shizuku",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                    }
+                                ) {
+                                    Text("Open Shizuku")
+                                }
                             }
 
                             Manager.ShizukuStatus.PermissionDenied -> Column(
@@ -319,6 +355,84 @@ class MainActivity : ComponentActivity() {
                             }
 
                             Manager.ShizukuStatus.Connected -> {
+                                if (showAll) {
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .toggleable(
+                                                    value = floatingButtonEnabled,
+                                                    role = Role.Switch,
+                                                    onValueChange = { enabled ->
+                                                        application.setFloatingButtonEnabled(enabled)
+                                                    }
+                                                ),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                modifier = Modifier.weight(1f),
+                                                text = stringResource(R.string.floating_button_toggle)
+                                            )
+                                            Switch(
+                                                checked = floatingButtonEnabled,
+                                                onCheckedChange = null
+                                            )
+                                        }
+
+                                        if (floatingButtonEnabled) {
+                                            Text(
+                                                text = stringResource(
+                                                    R.string.floating_button_size,
+                                                    floatingButtonSize
+                                                )
+                                            )
+                                            Slider(
+                                                value = floatingButtonSize.toFloat(),
+                                                onValueChange = { value ->
+                                                    val size = value.roundToInt()
+                                                    if (size != floatingButtonSize) {
+                                                        application.setFloatingButtonSize(size)
+                                                    }
+                                                },
+                                                valueRange = MyApplication.MIN_FLOATING_BUTTON_SIZE_DP.toFloat()..
+                                                    MyApplication.MAX_FLOATING_BUTTON_SIZE_DP.toFloat(),
+                                                steps = (MyApplication.MAX_FLOATING_BUTTON_SIZE_DP -
+                                                    MyApplication.MIN_FLOATING_BUTTON_SIZE_DP) /
+                                                    MyApplication.FLOATING_BUTTON_SIZE_STEP_DP - 1
+                                            )
+                                        }
+
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .toggleable(
+                                                    value = systemVolumeButtonHooksEnabled,
+                                                    role = Role.Switch,
+                                                    onValueChange = { enabled ->
+                                                        application.setSystemVolumeButtonHooksEnabled(
+                                                            enabled
+                                                        )
+                                                    }
+                                                ),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                modifier = Modifier.weight(1f),
+                                                text = stringResource(
+                                                    R.string.system_volume_button_hooks_toggle
+                                                )
+                                            )
+                                            Switch(
+                                                checked = systemVolumeButtonHooksEnabled,
+                                                onCheckedChange = null
+                                            )
+                                        }
+                                    }
+                                }
+
                                 ServiceStatus()
 
                                 AppVolumeList(
@@ -327,6 +441,7 @@ class MainActivity : ComponentActivity() {
                                     apps = manager.apps.values,
                                     showEmpty = true,
                                     showAll = showAll,
+                                    showVolumeButtonToggle = systemVolumeButtonHooksEnabled,
                                     onShowAll = { showAll = true },
                                     content = {
                                         item("system_volume_panel_main") {
@@ -359,18 +474,23 @@ class MainActivity : ComponentActivity() {
     data class ErrorInfo(val message: String, val stack: String)
 
     @SuppressLint("BatteryLife")
-    fun openBatterySettings() {
-        val intent = Intent(
-            Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-            Uri.fromParts("package", applicationInfo.packageName, null)
-        )
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        startActivity(intent)
-    }
+    private fun createBatteryOptimizationSettingsIntent() = Intent(
+        Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+        Uri.fromParts("package", applicationInfo.packageName, null)
+    )
 
     @Composable
     fun ServiceStatus() {
         var errorInfo by remember { mutableStateOf<ErrorInfo?>(null) }
+        val batterySettingsLauncher = rememberLauncherForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) {
+            checkBatteryOptimization()
+            lifecycleScope.launch {
+                delay(2_000.milliseconds)
+                checkBatteryOptimization()
+            }
+        }
 
         LaunchedEffect(0) {
             try {
@@ -417,7 +537,11 @@ class MainActivity : ComponentActivity() {
         Log.i(TAG, "Manufacturer: ${Build.MANUFACTURER}")
 
         if (!isIgnoringBatteryOptimization) {
-            Button(onClick = { openBatterySettings() }) {
+            Button(
+                onClick = {
+                    batterySettingsLauncher.launch(createBatteryOptimizationSettingsIntent())
+                }
+            ) {
                 Text(text = "Disable battery optimization")
             }
         }

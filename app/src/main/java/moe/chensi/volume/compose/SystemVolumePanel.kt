@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.DoNotDisturbOn
 import androidx.compose.material.icons.filled.NotificationsActive
@@ -19,9 +20,7 @@ import androidx.compose.material.icons.filled.RingVolume
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -30,7 +29,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -105,7 +103,7 @@ fun SystemVolumePanel(
         if (!applyVisibilityFilter || isSliderVisible(SystemSliderIds.Media)) {
             StreamVolumeSlider(
                 streamType = AudioManager.STREAM_MUSIC,
-                icon = Icons.Default.VolumeUp,
+                icon = Icons.AutoMirrored.Filled.VolumeUp,
                 name = stringResource(R.string.stream_media),
                 audioManager = audioManager,
                 footer = {
@@ -223,7 +221,7 @@ private fun RingFooter(
             checkedDescription = stringResource(R.string.disable_vibrate_mode),
             checkedIcon = Icons.Default.Vibration,
             uncheckedDescription = stringResource(R.string.enable_vibrate_mode),
-            uncheckedIcon = Icons.Default.VolumeUp
+            uncheckedIcon = Icons.AutoMirrored.Filled.VolumeUp
         ) {
             audioManager.ringerMode =
                 if (it) AudioManager.RINGER_MODE_VIBRATE else AudioManager.RINGER_MODE_NORMAL
