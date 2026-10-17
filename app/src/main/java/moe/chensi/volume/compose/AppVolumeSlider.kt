@@ -33,7 +33,11 @@ import kotlin.math.roundToInt
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppVolumeSlider(
-    app: App, showOptions: Boolean, enableHide: Boolean = true, onChange: (() -> Unit)? = null
+    app: App,
+    showOptions: Boolean,
+    enableHide: Boolean = true,
+    onChange: (() -> Unit)? = null,
+    showVolumeButtonToggle: Boolean = true
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -100,14 +104,16 @@ fun AppVolumeSlider(
                 }
             }
 
-            ToggleButton(
-                checked = app.disableVolumeButtons,
-                checkedIcon = HookOff,
-                checkedDescription = "Enable volume buttons",
-                uncheckedIcon = Hook,
-                uncheckedDescription = "Disable volume buttons"
-            ) {
-                app.disableVolumeButtons = it
+            if (showVolumeButtonToggle) {
+                ToggleButton(
+                    checked = app.disableVolumeButtons,
+                    checkedIcon = HookOff,
+                    checkedDescription = "Enable volume buttons",
+                    uncheckedIcon = Hook,
+                    uncheckedDescription = "Disable volume buttons"
+                ) {
+                    app.disableVolumeButtons = it
+                }
             }
         }
     }

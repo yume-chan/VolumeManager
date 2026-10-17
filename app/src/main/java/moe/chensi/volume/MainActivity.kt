@@ -23,8 +23,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Check
@@ -37,6 +40,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TooltipAnchorPosition
@@ -46,6 +51,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,6 +60,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -71,6 +78,7 @@ import moe.chensi.volume.ui.theme.VolumeManagerTheme
 import org.joor.Reflect
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuRemoteProcess
+import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 
 @SuppressLint("PrivateApi", "SoonBlockedPrivateApi")
@@ -156,6 +164,10 @@ class MainActivity : ComponentActivity() {
         checkBatteryOptimization()
 
         setContent {
+            val floatingButtonEnabled by application.floatingButtonEnabled.collectAsState()
+            val floatingButtonSize by application.floatingButtonSize.collectAsState()
+            val systemVolumeButtonHooksEnabled by
+                application.systemVolumeButtonHooksEnabled.collectAsState()
             var showAll by remember { mutableStateOf(false) }
             var crashReport by remember { mutableStateOf<String?>(null) }
             var showAboutDialog by remember { mutableStateOf(false) }
@@ -343,6 +355,84 @@ class MainActivity : ComponentActivity() {
                             }
 
                             Manager.ShizukuStatus.Connected -> {
+                                if (showAll) {
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .toggleable(
+                                                    value = floatingButtonEnabled,
+                                                    role = Role.Switch,
+                                                    onValueChange = { enabled ->
+                                                        application.setFloatingButtonEnabled(enabled)
+                                                    }
+                                                ),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                modifier = Modifier.weight(1f),
+                                                text = stringResource(R.string.floating_button_toggle)
+                                            )
+                                            Switch(
+                                                checked = floatingButtonEnabled,
+                                                onCheckedChange = null
+                                            )
+                                        }
+
+                                        if (floatingButtonEnabled) {
+                                            Text(
+                                                text = stringResource(
+                                                    R.string.floating_button_size,
+                                                    floatingButtonSize
+                                                )
+                                            )
+                                            Slider(
+                                                value = floatingButtonSize.toFloat(),
+                                                onValueChange = { value ->
+                                                    val size = value.roundToInt()
+                                                    if (size != floatingButtonSize) {
+                                                        application.setFloatingButtonSize(size)
+                                                    }
+                                                },
+                                                valueRange = MyApplication.MIN_FLOATING_BUTTON_SIZE_DP.toFloat()..
+                                                    MyApplication.MAX_FLOATING_BUTTON_SIZE_DP.toFloat(),
+                                                steps = (MyApplication.MAX_FLOATING_BUTTON_SIZE_DP -
+                                                    MyApplication.MIN_FLOATING_BUTTON_SIZE_DP) /
+                                                    MyApplication.FLOATING_BUTTON_SIZE_STEP_DP - 1
+                                            )
+                                        }
+
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .toggleable(
+                                                    value = systemVolumeButtonHooksEnabled,
+                                                    role = Role.Switch,
+                                                    onValueChange = { enabled ->
+                                                        application.setSystemVolumeButtonHooksEnabled(
+                                                            enabled
+                                                        )
+                                                    }
+                                                ),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                modifier = Modifier.weight(1f),
+                                                text = stringResource(
+                                                    R.string.system_volume_button_hooks_toggle
+                                                )
+                                            )
+                                            Switch(
+                                                checked = systemVolumeButtonHooksEnabled,
+                                                onCheckedChange = null
+                                            )
+                                        }
+                                    }
+                                }
+
                                 ServiceStatus()
 
                                 AppVolumeList(
@@ -351,6 +441,7 @@ class MainActivity : ComponentActivity() {
                                     apps = manager.apps.values,
                                     showEmpty = true,
                                     showAll = showAll,
+                                    showVolumeButtonToggle = systemVolumeButtonHooksEnabled,
                                     onShowAll = { showAll = true },
                                     content = {
                                         item("system_volume_panel_main") {

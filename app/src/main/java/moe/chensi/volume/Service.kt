@@ -1,7 +1,5 @@
 package moe.chensi.volume
 
-import android.accessibilityservice.AccessibilityButtonController
-import android.accessibilityservice.AccessibilityButtonController.AccessibilityButtonCallback
 import android.accessibilityservice.AccessibilityService
 import android.animation.Animator
 import android.animation.ValueAnimator
@@ -29,7 +27,6 @@ import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -47,6 +44,12 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.launch
 import moe.chensi.volume.compose.AppVolumeList
 import moe.chensi.volume.compose.SystemVolumePanel
 import moe.chensi.volume.compose.VolumeChangeObserver
@@ -80,6 +83,8 @@ class Service : AccessibilityService() {
         )
     }
     private lateinit var manager: Manager
+    private lateinit var app: MyApplication
+    private var preferenceScope: CoroutineScope? = null
 
     private val handler = object : Handler(Looper.getMainLooper()) {
         fun hideView() {
@@ -239,6 +244,7 @@ class Service : AccessibilityService() {
 
     private var view: View? = null
     private var viewVisible = false
+    private var floatingButton: FloatingButton? = null
 
     private fun showView() {
         if (view == null) {
@@ -256,6 +262,22 @@ class Service : AccessibilityService() {
         }
 
         handler.startIdleTimer()
+    }
+
+    private fun setFloatingButtonPreferences(enabled: Boolean, sizeDp: Int) {
+        if (enabled) {
+            val button = floatingButton ?: FloatingButton(
+                this,
+                windowManager,
+                ::showView,
+                sizeDp
+            ).also { floatingButton = it }
+            button.setSize(sizeDp)
+            button.show()
+        } else {
+            floatingButton?.setSize(sizeDp)
+            floatingButton?.hide()
+        }
     }
 
     private var currentAnimator: ValueAnimator? = null
@@ -315,19 +337,28 @@ class Service : AccessibilityService() {
 
         startForegroundNotification()
 
-        val application = super.getApplication() as MyApplication
-        manager = application.manager
-
-        accessibilityButtonController.registerAccessibilityButtonCallback(object :
-            AccessibilityButtonCallback() {
-            override fun onClicked(controller: AccessibilityButtonController?) {
-                if (manager.shizukuStatus == Manager.ShizukuStatus.Connected) {
-                    showView()
-                }
-            }
-        })
+        app = super.getApplication() as MyApplication
+        manager = app.manager
 
         registerReceiver(broadcastReceiver, IntentFilter(ACTION_SHOW_VIEW), RECEIVER_NOT_EXPORTED)
+
+        preferenceScope?.cancel()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+        preferenceScope = scope
+        scope.launch {
+            combine(app.floatingButtonEnabled, app.floatingButtonSize) { enabled, sizeDp ->
+                enabled to sizeDp
+            }.collect { (enabled, sizeDp) ->
+                setFloatingButtonPreferences(enabled, sizeDp)
+            }
+        }
+        scope.launch {
+            app.systemVolumeButtonHooksEnabled.collect { enabled ->
+                if (!enabled) {
+                    handler.stopRepeatAdjustVolume()
+                }
+            }
+        }
 
         Log.i(TAG, "onServiceConnected done ${serviceInfo.capabilities.toString(2)}")
     }
@@ -381,14 +412,15 @@ class Service : AccessibilityService() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
-
         Log.i(TAG, "onDestroy")
 
+        preferenceScope?.cancel()
+        floatingButton?.hide()
         stopForeground(STOP_FOREGROUND_REMOVE)
         Toast.makeText(this, "Accessibility service died!", Toast.LENGTH_SHORT).show()
 
         unregisterReceiver(broadcastReceiver)
+        super.onDestroy()
     }
 
     val activityTaskManager by lazy { ActivityTaskManagerProxy(this) }
@@ -401,6 +433,13 @@ class Service : AccessibilityService() {
 
         // Only handle `VOLUME_UP` and `VOLUME_DOWN`
         if (event.keyCode != KeyEvent.KEYCODE_VOLUME_UP && event.keyCode != KeyEvent.KEYCODE_VOLUME_DOWN) {
+            return false
+        }
+
+        if (!app.systemVolumeButtonHooksEnabled.value) {
+            if (event.action == KeyEvent.ACTION_UP) {
+                handler.stopRepeatAdjustVolume()
+            }
             return false
         }
 
