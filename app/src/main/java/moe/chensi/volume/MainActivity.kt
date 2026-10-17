@@ -16,8 +16,10 @@ import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -57,6 +59,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.net.toUri
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import moe.chensi.volume.compose.AboutDialog
 import moe.chensi.volume.compose.AppVolumeList
 import moe.chensi.volume.compose.CrashReportDialog
@@ -66,6 +71,7 @@ import moe.chensi.volume.ui.theme.VolumeManagerTheme
 import org.joor.Reflect
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuRemoteProcess
+import kotlin.time.Duration.Companion.milliseconds
 
 @SuppressLint("PrivateApi", "SoonBlockedPrivateApi")
 class MainActivity : ComponentActivity() {
@@ -296,8 +302,26 @@ class MainActivity : ComponentActivity() {
                                 Text("Waiting for Shizuku...")
                                 Text(
                                     textAlign = TextAlign.Center,
-                                    text = "Make sure Shizuku is installed and enabled"
+                                    text = "Make sure Shizuku is enabled"
                                 )
+                                Button(
+                                    onClick = {
+                                        val launchIntent = packageManager.getLaunchIntentForPackage(
+                                            Manager.SHIZUKU_PACKAGE_NAME
+                                        )
+                                        if (launchIntent != null) {
+                                            startActivity(launchIntent)
+                                        } else {
+                                            Toast.makeText(
+                                                this@MainActivity,
+                                                "Unable to open Shizuku",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                    }
+                                ) {
+                                    Text("Open Shizuku")
+                                }
                             }
 
                             Manager.ShizukuStatus.PermissionDenied -> Column(
@@ -359,18 +383,23 @@ class MainActivity : ComponentActivity() {
     data class ErrorInfo(val message: String, val stack: String)
 
     @SuppressLint("BatteryLife")
-    fun openBatterySettings() {
-        val intent = Intent(
-            Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-            Uri.fromParts("package", applicationInfo.packageName, null)
-        )
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        startActivity(intent)
-    }
+    private fun createBatteryOptimizationSettingsIntent() = Intent(
+        Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+        Uri.fromParts("package", applicationInfo.packageName, null)
+    )
 
     @Composable
     fun ServiceStatus() {
         var errorInfo by remember { mutableStateOf<ErrorInfo?>(null) }
+        val batterySettingsLauncher = rememberLauncherForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) {
+            checkBatteryOptimization()
+            lifecycleScope.launch {
+                delay(2_000.milliseconds)
+                checkBatteryOptimization()
+            }
+        }
 
         LaunchedEffect(0) {
             try {
@@ -417,7 +446,11 @@ class MainActivity : ComponentActivity() {
         Log.i(TAG, "Manufacturer: ${Build.MANUFACTURER}")
 
         if (!isIgnoringBatteryOptimization) {
-            Button(onClick = { openBatterySettings() }) {
+            Button(
+                onClick = {
+                    batterySettingsLauncher.launch(createBatteryOptimizationSettingsIntent())
+                }
+            ) {
                 Text(text = "Disable battery optimization")
             }
         }
