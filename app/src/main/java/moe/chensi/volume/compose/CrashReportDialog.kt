@@ -24,9 +24,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import moe.chensi.volume.CrashHandler
+import moe.chensi.volume.R
 
 @Composable
 fun CrashReportDialog(
@@ -44,12 +46,12 @@ fun CrashReportDialog(
         AlertDialog(
             onDismissRequest = onDismiss,
             title = {
-                Text(text = "Unexpected Crash Detected")
+                Text(text = stringResource(R.string.crash_detected_title))
             },
             text = {
                 Column {
                     Text(
-                        text = "The app encountered an unexpected error on the previous run. Please report this issue to help improve the app.",
+                        text = stringResource(R.string.crash_detected_description),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
@@ -71,7 +73,7 @@ fun CrashReportDialog(
 
                         if (isTruncated) {
                             TextButton(onClick = { showFullReport = true }) {
-                                Text(text = "Show full report")
+                                Text(text = stringResource(R.string.show_full_report))
                             }
                         }
                     } else {
@@ -86,7 +88,7 @@ fun CrashReportDialog(
                         )
 
                         TextButton(onClick = { showFullReport = false }) {
-                            Text(text = "Show less")
+                            Text(text = stringResource(R.string.show_less))
                         }
                     }
                 }
@@ -95,14 +97,18 @@ fun CrashReportDialog(
                 Button(
                     onClick = {
                         val clipboard = context.getSystemService(ClipboardManager::class.java)
-                        val clip = ClipData.newPlainText("crash_report", crashReport)
+                        val clip = ClipData.newPlainText(
+                            context.getString(R.string.crash_report_clipboard_label), crashReport
+                        )
                         clipboard.setPrimaryClip(clip)
-                        Toast.makeText(context, "Crash report copied to clipboard", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context, R.string.copied_to_clipboard, Toast.LENGTH_SHORT
+                        ).show()
                         onDismiss()
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Copy Report & Close")
+                    Text(stringResource(R.string.copy_report_and_close))
                 }
             },
             dismissButton = {
@@ -113,7 +119,7 @@ fun CrashReportDialog(
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Close")
+                    Text(stringResource(R.string.close))
                 }
             }
         )

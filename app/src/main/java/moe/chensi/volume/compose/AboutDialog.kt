@@ -56,14 +56,17 @@ fun AboutDialog(
                         TextButton(
                             onClick = {
                                 val clipboard = context.getSystemService(ClipboardManager::class.java)
-                                val clip =
-                                    ClipData.newPlainText("VolumeManager", BuildConfig.VERSION_NAME)
+                                val clip = ClipData.newPlainText(
+                                    context.getString(R.string.app_name), BuildConfig.VERSION_NAME
+                                )
                                 clipboard.setPrimaryClip(clip)
-                                Toast.makeText(context, "Copied", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context, R.string.copied_to_clipboard, Toast.LENGTH_SHORT
+                                ).show()
                             },
                             modifier = Modifier.alignByBaseline()
                         ) {
-                            Text("Copy")
+                            Text(stringResource(R.string.copy))
                         }
                     }
                     Text(

@@ -174,10 +174,10 @@ fun AppVolumeList(
                         ),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(text = "No active players")
+                        Text(text = stringResource(R.string.no_active_players))
 
                         Button(onClick = { onShowAll?.invoke() }) {
-                            Text(text = "Show all apps")
+                            Text(text = stringResource(R.string.show_all_apps))
                         }
                     }
                 }
