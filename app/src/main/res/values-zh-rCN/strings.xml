@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">AppVolMgr</string>
+    <string name="quick_settings_tile">音量管理器</string>
     <string name="accessibility_service_description">保持 AppVolMgr 在后台运行，通过悬浮按钮或物理音量键快速调整音量</string>
     <string name="floating_button_toggle">显示悬浮按钮</string>
     <string name="floating_button_size">悬浮按钮大小：%1$d dp</string>
