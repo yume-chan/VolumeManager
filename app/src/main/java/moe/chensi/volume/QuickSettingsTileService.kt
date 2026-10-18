@@ -12,10 +12,6 @@ class QuickSettingsTileService : TileService() {
         launchActivity(Intent(this, PopupActivity::class.java))
     }
 
-    override fun getLongClickIntent(): Intent {
-        return Intent(this, MainActivity::class.java)
-    }
-
     private fun launchActivity(intent: Intent) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             val pendingIntent = PendingIntent.getActivity(
