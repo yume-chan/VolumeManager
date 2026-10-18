@@ -29,6 +29,7 @@ Some hand-picked versions can also be downloaded from [releases](https://github.
    1. The main interface
    2. Press any volume button and a popup should appear, completely replace the default volume popup
    3. Enable accessibility button and click the button
+   4. Add the Quick Settings tile; tap it to open the popup or long-press it to open the main interface
 
 ## Compare to [SoundMaster from ShizuTools](https://github.com/legendsayantan/ShizuTools/wiki/SoundMaster)
 

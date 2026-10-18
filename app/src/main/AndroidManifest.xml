@@ -45,6 +45,17 @@
             android:theme="@style/Theme.VolumeManager.Popup" />
 
         <service
+            android:name=".QuickSettingsTileService"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/quick_settings_tile"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <service
             android:name=".Service"
             android:exported="true"
             android:foregroundServiceType="specialUse"
