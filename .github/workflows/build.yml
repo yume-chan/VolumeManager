@@ -26,6 +26,9 @@ jobs:
           java-version: "21"
           cache: "gradle"
 
+      - name: Foojay resolution result
+        run: curl --head https\://api.foojay.io/disco/v3.0/ids/0d1a1acdc708062093673f65aa9aba4b/redirect
+
       - name: Build
         run: ./gradlew assembleRelease
 
