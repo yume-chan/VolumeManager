@@ -2,8 +2,9 @@
 
 [<img src="https://img.shields.io/f-droid/v/moe.chensi.volume?baseUrl=https://apt.izzysoft.de/fdroid&label=IzzyOnDroid" alt="IzzyOnDroid">](https://apt.izzysoft.de/fdroid/index/apk/moe.chensi.volume)
 [<img src="https://shields.rbtlog.dev/simple/moe.chensi.volume" alt="RB shield">](https://shields.rbtlog.dev/moe.chensi.volume)
-
-**Work in progress**
+<a href="https://tangoadb.dev/discord">
+    <img alt="Discord" src="https://img.shields.io/discord/1120215514732564502?logo=discord&logoColor=%23ffffff&label=Discord">
+</a>
 
 Control each app's volume independently. [Shizuku](https://shizuku.rikka.app/) is used to access privileged APIs.
 
