@@ -1,0 +1,6 @@
+- Added an optional volume-button popup for system-wide volume controls
+- Added floating button and Quick Settings tile access
+- Added controls for call, ring, alarm, and notification streams
+- Improved Shizuku setup and foreground service reliability
+- Added About dialog and per-app settings improvements
+- Improved accessibility, app list stability, and popup layout
