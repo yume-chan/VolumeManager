@@ -4,11 +4,13 @@ on:
       - main
     paths-ignore:
       - README.md
+      - fastlane/**
   pull_request:
     branches:
       - main
     paths-ignore:
       - README.md
+      - fastlane/**
   workflow_dispatch:
 
 jobs:
