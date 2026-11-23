@@ -1,0 +1,3 @@
+- Improved Shizuku permission and service setup
+- Fixed permission and service startup issues
+- Improved README and download documentation

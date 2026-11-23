@@ -1,0 +1,4 @@
+Initial release
+- Control each app's volume independently
+- Trigger the volume popup with system volume buttons
+- Requires Shizuku

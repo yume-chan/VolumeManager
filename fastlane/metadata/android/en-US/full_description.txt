@@ -1,1 +1,12 @@
-<p><i>Volume Manager</i> lets you control each app's volume independently. It requires <a href='https://shizuku.rikka.app/' target='_blank' rel='nofollow noopener'>Shizuku</a> to access privileged APIs.</p><p>You can change volume either from the main interface; by pressing any volume button and have a popup should appear, completely replace the default volume popup; or by enabling accessibility button and click that.</p>
+<p><i>Volume Manager</i> lets you control each app's volume independently. It requires <a href="https://shizuku.rikka.app/" target="_blank" rel="nofollow noopener">Shizuku</a> to access privileged APIs and requires Android 13 or later.</p>
+
+<p>Adjust app volumes from the main interface, press a volume button to open the app-volume popup, or enable the floating button and Quick Settings tile for quick access.</p>
+
+<p>Features include:</p>
+<ul>
+  <li>Independent volume controls for each app</li>
+  <li>Volume control for full system streams, including call, ring, alarm, and notification volumes</li>
+  <li>Optional volume popup triggered by system volume buttons</li>
+  <li>Optional floating button and Quick Settings tile</li>
+  <li>Per-app settings and a global switch for the volume-button popup</li>
+</ul>
